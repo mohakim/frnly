@@ -1,18 +1,18 @@
 # Frnly Chatbot 🤖💬
 
 ## Table of Contents 📝
-- [Introduction](#introduction)
-- [Features](#features)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [TODO](#todo)
-- [Contributions](#contributions)
+- [Introduction](##introduction)
+- [Features](##features)
+- [Installation](##installation)
+- [Usage](##usage)
+- [Customization](##customization)
+- [TODO](##todo)
+- [Pre-requisites](##pre-requisites)
 
 ## Introduction 🌟
 Welcome to Frnly, a highly customizable chatbot built with Golang! This project leverages OpenAI's GPT API to provide you with natural, interactive, and intelligent conversations.
 
-##  Features ✨
+## Features ✨
 
 - 📝 Text-based user interface
 - 🎨 Highly customizable
@@ -41,8 +41,9 @@ Edit the `settings.conf` file in the `~/.config/frnly` directory to customize th
 - **Model**: The GPT model to use.
 - **Prompt**: Customize the prompt text.
 - **CodeBlock**: Code output color
-- **etc**
-
+- **UserColor**: User input color
+- **BotColor**: Default assistant color
+- **Context**: Control the context size (will impact token usage)
 
 ## TODO 📝
 
