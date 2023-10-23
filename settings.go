@@ -25,10 +25,10 @@ type Settings struct {
 	ExitCommand     string
 }
 
-func readSettingsFromFile(filePath string) Settings {
+func readSettingsFromFile(filePath string) (Settings, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		panic("Failed to open settings.conf file")
+		return Settings{}, err
 	}
 	defer file.Close()
 
@@ -85,10 +85,10 @@ func readSettingsFromFile(filePath string) Settings {
 	}
 
 	if err := scanner.Err(); err != nil {
-		panic("Failed to read settings.conf file")
-	}
+	  return Settings{}, err
+  }
 
-	return settings
+	return settings, nil
 }
 
 func parseFloat32(str string) float32 {
