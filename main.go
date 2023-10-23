@@ -28,7 +28,7 @@ func main() {
   InitializeColors(config)
 
 	if config.APIKey == "" {
-		fmt.Println("API_KEY environment variable not set")
+		fmt.Println("You need to add your API key in ~/.config/frnly/settings.conf")
 		os.Exit(1)
 	}
 	
@@ -88,7 +88,7 @@ func main() {
 		fmt.Println(formattedReply + "\n")
 
 		if config.History {
-			if len(dynamicHistory) > maxContext {
+			if len(dynamicHistory) > config.Context {
 				dynamicHistory = truncateDynamicHistory(dynamicHistory)
 			}
 			writeHistoryToFile(historyPath, permanentHistory, dynamicHistory)

@@ -7,10 +7,7 @@ import (
   "path/filepath"
 )
 
-const (
-	configDirName = ".config/frnly"
-	maxContext  = 8192
-)
+const	configDirName = ".config/frnly"
 
 var (
   configDir     string
@@ -76,7 +73,6 @@ func readHistoryFromFile(fileName string) (string, string) {
 		return "", ""
 	}
   if len(fileData) == 0 {
-    fmt.Println("The file is empty")
     return "", ""
   }
 	sections := strings.Split(string(fileData), "Dynamic:")
@@ -92,7 +88,7 @@ func writeHistoryToFile(fileName string, permanentHistory string, dynamicHistory
 }
 
 func truncateDynamicHistory(dynamicHistory string) string {
-	if len(dynamicHistory) > maxContext {
+	if len(dynamicHistory) > config.Context {
 		lines := strings.Split(dynamicHistory, "\n")
 		return strings.Join(lines[2:], "\n")
 	}
