@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 const configDirName = ".config/frnly"
@@ -14,6 +14,7 @@ var (
 	configDir    string
 	historyPath  string
 	settingsPath string
+	sessionPath  string
 )
 
 func InitializeConfigFiles() error {
@@ -31,6 +32,7 @@ func InitializeConfigFiles() error {
 
 	historyPath = filepath.Join(configDir, "history.log")
 	settingsPath = filepath.Join(configDir, "settings.conf")
+	sessionPath = filepath.Join(configDir, "session.log")
 
 	defaultSettings := `# settings.conf
 # OpenAI API Configuration
@@ -39,7 +41,7 @@ API_KEY=""
 # GPT Model and Tuning
 Temperature=0.2
 Model="gpt-4-0314"
-History=True
+Session=True
 Context=3000
 
 # Styling
@@ -52,10 +54,23 @@ References="#FFAA00"
 
 # Interaction
 Prompt=">>>"
-clear="!clear"
-submit="!fin"
-exit="!exit"`
+Clear="!clear"
+Submit="!fin"
+History="!hist"
+Exit="!exit"`
 
+	initialSession := Session{
+		Permanent: "",
+		Dynamic:   []ChatMessage{},
+	}
+
+	initialSessionJSON, err := json.Marshal(initialSession)
+
+	if err != nil {
+		return fmt.Errorf("Couldn't marshal initial session to JSON: %w", err)
+	}
+
+	err = createFile(sessionPath, string(initialSessionJSON))
 	err = createFile(historyPath, "")
 	err = createFile(settingsPath, defaultSettings)
 	return err
@@ -79,24 +94,22 @@ func createFile(filePath string, defaultContent string) error {
 	return nil
 }
 
-func readHistoryFromFile(fileName string) (string, string, error) {
+func readHistory(fileName string) (string, error) {
 	fileData, err := os.ReadFile(fileName)
 
 	if err != nil {
-		return "", "", fmt.Errorf("Failed to read the history at %s: %w", fileName, err)
+		return "", fmt.Errorf("Failed to read the history at %s: %w", fileName, err)
 	}
 
 	if len(fileData) == 0 {
-		return "", "", nil
+		return "", fmt.Errorf("History is empty")
+	} else {
+		return string(fileData), nil
 	}
-
-	sections := strings.Split(string(fileData), "Dynamic:")
-	return strings.TrimSpace(sections[0]), strings.TrimSpace(sections[1]), nil
 }
 
-func writeHistoryToFile(fileName string, permanentHistory string, dynamicHistory string) error {
-	content := permanentHistory + "\n\nDynamic:\n" + dynamicHistory
-	err := os.WriteFile(fileName, []byte(content), 0644)
+func writeHistory(fileName string, history string) error {
+	err := os.WriteFile(fileName, []byte(history), 0644)
 
 	if err != nil {
 		return fmt.Errorf("Failed to write to file: %w", err)
@@ -105,7 +118,34 @@ func writeHistoryToFile(fileName string, permanentHistory string, dynamicHistory
 	return nil
 }
 
-func truncateDynamicHistory(dynamicHistory string) string {
-	lines := strings.Split(dynamicHistory, "\n")
-	return strings.Join(lines[2:], "\n")
+func readSession(fileName string) (Session, error) {
+	fileData, err := os.ReadFile(fileName)
+
+	if err != nil {
+		return Session{}, fmt.Errorf("Failed to open file: %w", err)
+	}
+
+	var session Session
+
+	if err := json.Unmarshal(fileData, &session); err != nil {
+		return Session{}, fmt.Errorf("Failed to unmarshal session: %w", err)
+	}
+
+	return session, nil
+}
+
+func writeSession(filename string, session Session) error {
+	content, err := json.MarshalIndent(session, "", " ")
+
+	if err != nil {
+		return fmt.Errorf("Failed to marshal session: %w", err)
+	}
+
+	err = os.WriteFile(filename, content, 0644)
+
+	if err != nil {
+		return fmt.Errorf("Failed to write session to file: %w", err)
+	}
+
+	return nil
 }

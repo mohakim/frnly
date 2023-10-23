@@ -8,6 +8,11 @@ import (
 	"net/http"
 )
 
+type Session struct {
+	Permanent string        `json:"permanent"`
+	Dynamic   []ChatMessage `json:"dynamic"`
+}
+
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -25,12 +30,14 @@ type APIResponse struct {
 	} `json:"choices"`
 }
 
-func getAssistantReply(config Settings, text string) (string, error) {
+func getAssistantReply(config Settings, session Session) (string, error) {
+	messages := make([]ChatMessage, 0)
+	messages = append(messages, ChatMessage{Role: "system", Content: session.Permanent})
+	messages = append(messages, session.Dynamic...)
+
 	payload := ChatPayload{
-		Model: config.Model,
-		Messages: []ChatMessage{
-			{Role: "user", Content: text},
-		},
+		Model:       config.Model,
+		Messages:    messages,
 		Temperature: config.Temperature,
 	}
 
