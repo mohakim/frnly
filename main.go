@@ -146,7 +146,7 @@ func main() {
 
       session.Dynamic = append(session.Dynamic, ChatMessage{
 				Role:    "assistant",
-				Content: userInput,
+				Content: reply,
 			})
 
 			formattedReply = applyFormatting(reply)
