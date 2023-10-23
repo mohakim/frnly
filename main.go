@@ -3,12 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 	"strings"
-  "strconv"
 )
-
-var config Settings
 
 func HexToANSI(hex string) string {
 
@@ -23,37 +22,60 @@ func HexToANSI(hex string) string {
 
 func main() {
 
-  InitializeConfigFiles()
-  config = readSettingsFromFile(settingsPath)
-  InitializeColors(config)
+	var (
+		permanentHistory string
+		dynamicHistory   string
+		userInput        string
+		formattedReply   string
+	)
+
+	if err := InitializeConfigFiles(); err != nil {
+		log.Fatal(err)
+	}
+
+	config, err := readSettingsFromFile(settingsPath)
+
+	if err != nil {
+		log.Fatal("Error reading configuration file: ", err)
+	}
+
+	InitializeColors(config)
 
 	if config.APIKey == "" {
-		fmt.Println("You need to add your API key in ~/.config/frnly/settings.conf")
-		os.Exit(1)
+		log.Fatal("You need to add your API key in ~/.config/frnly/settings.conf")
 	}
-	
-  var permanentHistory, dynamicHistory string
+
 	if config.History {
-		permanentHistory, dynamicHistory = readHistoryFromFile(historyPath)
+		permanentHistory, dynamicHistory, err = readHistoryFromFile(historyPath)
+
+		if err != nil {
+			fmt.Printf("Failed to read from %s! Will proceed without persistent history\nError: %v", historyPath, err)
+		}
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	var userInput string
-  
+
 	for {
-    fmt.Print(HexToANSI(config.UserColor))
-    fmt.Print(config.Prompt)
+		fmt.Print(HexToANSI(config.UserColor))
+		fmt.Print(config.Prompt)
+
 		for {
-			line, _ := reader.ReadString('\n')
+			line, err := reader.ReadString('\n')
+
+			if err != nil {
+				log.Fatal("Failed to read user input!", err)
+			}
+
 			line = strings.TrimSpace(line)
+
 			if strings.Contains(line, config.SubmitCommand) || strings.Contains(line, config.ClearCommand) || strings.Contains(line, config.ExitCommand) {
 				userInput += line
-        fmt.Print("\n")
+				fmt.Print("\n")
 				break
 			}
+
 			userInput += line + "\n"
 		}
-    fmt.Print("\033[0m")
 
 		if strings.Contains(userInput, config.ClearCommand) {
 			fmt.Print("\033[H\033[2J")
@@ -65,35 +87,44 @@ func main() {
 			break
 		}
 
-		
-    userInput = strings.ReplaceAll(userInput, config.SubmitCommand, "")
-    if config.History{
-      dynamicHistory += "user: " + userInput + "\n"
-    }
+		userInput = strings.ReplaceAll(userInput, config.SubmitCommand, "")
 
-		
-		reply, err := getAssistantReply(config.APIKey, permanentHistory+dynamicHistory)
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
+		if config.History {
+			dynamicHistory += "user: " + userInput + "\n"
+			reply, err := getAssistantReply(config, permanentHistory+dynamicHistory)
+
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+
+			formattedReply = applyFormatting(reply)
+			dynamicHistory += "assistant: " + formattedReply + "\n"
+		} else {
+			reply, err := getAssistantReply(config, userInput)
+
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+
+			formattedReply = applyFormatting(reply)
 		}
-    
-    formattedReply := applyFormatting(reply)
 
-    if config.History {
-      dynamicHistory += "assistant: " + formattedReply + "\n"
-	  }
-
-		
 		fmt.Println(formattedReply + "\n")
 
 		if config.History {
 			if len(dynamicHistory) > config.Context {
 				dynamicHistory = truncateDynamicHistory(dynamicHistory)
 			}
-			writeHistoryToFile(historyPath, permanentHistory, dynamicHistory)
+
+			err := writeHistoryToFile(historyPath, permanentHistory, dynamicHistory)
+
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
-		
+
 		userInput = ""
 	}
 }

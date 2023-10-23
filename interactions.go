@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-  "fmt"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -25,35 +25,43 @@ type APIResponse struct {
 	} `json:"choices"`
 }
 
-func getAssistantReply(apiKey string, chatHistory string) (string, error) {
+func getAssistantReply(config Settings, text string) (string, error) {
 	payload := ChatPayload{
 		Model: config.Model,
 		Messages: []ChatMessage{
-			{Role: "user", Content: chatHistory},
+			{Role: "user", Content: text},
 		},
 		Temperature: config.Temperature,
 	}
-	payloadJSON, _ := json.Marshal(payload)
+
+	payloadJSON, err := json.Marshal(payload)
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to marshal payload: %v", err)
+	}
 
 	req, _ := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(payloadJSON))
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", config.APIKey))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
+
 	if err != nil {
 		return "", err
 	}
+
 	defer resp.Body.Close()
 
-  body, _ := io.ReadAll(resp.Body)
-  var apiResponse APIResponse
-  if err := json.Unmarshal(body, &apiResponse); err != nil {
-    return "", fmt.Errorf("failed to unmarshal response: %v", err)
-  }
+	body, _ := io.ReadAll(resp.Body)
+	var apiResponse APIResponse
 
-  if resp.StatusCode != 200 || len(apiResponse.Choices) == 0 {
-    return "", fmt.Errorf("received an invalid response from API: HTTP %d, Body: %s", resp.StatusCode, string(body))
-  }
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return "", fmt.Errorf("Failed to unmarshal response: %v", err)
+	}
 
-  return apiResponse.Choices[0].Message.Content, nil
+	if resp.StatusCode != 200 || len(apiResponse.Choices) == 0 {
+		return "", fmt.Errorf("received an invalid response from API: HTTP %d, Body: %s", resp.StatusCode, string(body))
+	}
+
+	return apiResponse.Choices[0].Message.Content, nil
 }

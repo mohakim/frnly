@@ -2,34 +2,36 @@ package main
 
 import (
 	"bufio"
-  "fmt"
+	"fmt"
 	"os"
 	"strings"
 )
 
 type Settings struct {
-	APIKey          string
-	Temperature     float32
-	Model           string
-	History         bool
-	Context         int
-	UserColor       string
-	BotColor        string
-	CodeBlock       string
-  TextBlock       string
-	Comments        string
-	References      string
-	Prompt          string
-	ClearCommand    string
-	SubmitCommand   string
-	ExitCommand     string
+	APIKey        string
+	Temperature   float32
+	Model         string
+	History       bool
+	Context       int
+	UserColor     string
+	BotColor      string
+	CodeBlock     string
+	TextBlock     string
+	Comments      string
+	References    string
+	Prompt        string
+	ClearCommand  string
+	SubmitCommand string
+	ExitCommand   string
 }
 
 func readSettingsFromFile(filePath string) (Settings, error) {
 	file, err := os.Open(filePath)
+
 	if err != nil {
 		return Settings{}, err
 	}
+
 	defer file.Close()
 
 	settings := Settings{}
@@ -37,11 +39,13 @@ func readSettingsFromFile(filePath string) (Settings, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
+
 		if strings.HasPrefix(line, "#") || strings.TrimSpace(line) == "" {
 			continue
 		}
 
 		parts := strings.SplitN(line, "=", 2)
+
 		if len(parts) != 2 {
 			continue
 		}
@@ -67,7 +71,7 @@ func readSettingsFromFile(filePath string) (Settings, error) {
 			settings.BotColor = value
 		case "CodeBlock":
 			settings.CodeBlock = value
-    case "TextBlock":
+		case "TextBlock":
 			settings.TextBlock = value
 		case "Comments":
 			settings.Comments = value
@@ -85,8 +89,8 @@ func readSettingsFromFile(filePath string) (Settings, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-	  return Settings{}, err
-  }
+		return Settings{}, err
+	}
 
 	return settings, nil
 }

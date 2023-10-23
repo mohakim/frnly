@@ -2,29 +2,31 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"strings"
-  "path/filepath"
 )
 
-const	configDirName = ".config/frnly"
+const configDirName = ".config/frnly"
 
 var (
-  configDir     string
-  historyPath   string
-  settingsPath  string
+	configDir    string
+	historyPath  string
+	settingsPath string
 )
 
-func InitializeConfigFiles() {
+func InitializeConfigFiles() error {
 	homeDir, err := os.UserHomeDir()
+
 	if err != nil {
-		panic("Couldn't determine the user's home directory.")
+		return fmt.Errorf("Couldn't determine the user's home directory: %w", err)
 	}
 
 	configDir = filepath.Join(homeDir, configDirName)
 
 	if err := os.MkdirAll(configDir, 0755); err != nil {
-		panic("Couldn't create the configuration directory.")
+		log.Fatal("Couldn't create the configuration directory: ", err)
 	}
 
 	historyPath = filepath.Join(configDir, "history.log")
@@ -38,7 +40,7 @@ API_KEY=""
 Temperature=0.2
 Model="gpt-4-0314"
 History=True
-Context=8192
+Context=3000
 
 # Styling
 UserColor="#4499FF"
@@ -54,43 +56,56 @@ clear="!clear"
 submit="!fin"
 exit="!exit"`
 
-	createFileIfNotExist(historyPath, "")
-	createFileIfNotExist(settingsPath, defaultSettings)
+	err = createFile(historyPath, "")
+	err = createFile(settingsPath, defaultSettings)
+	return err
 }
 
-func createFileIfNotExist(filePath string, defaultContent string) {
+func createFile(filePath string, defaultContent string) error {
 	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		if err := os.WriteFile(filePath, []byte(defaultContent), 0644); err != nil {
-			panic(fmt.Sprintf("Failed to create the file %s.", filePath))
-		}
+
+	if err == nil {
+		return nil
 	}
+
+	if !os.IsNotExist(err) {
+		return fmt.Errorf("Failed to stat the file %s: %w", filePath, err)
+	}
+
+	if err := os.WriteFile(filePath, []byte(defaultContent), 0644); err != nil {
+		return fmt.Errorf("Failed to write to the file %s: %w", filePath, err)
+	}
+
+	return nil
 }
 
-func readHistoryFromFile(fileName string) (string, string) {
+func readHistoryFromFile(fileName string) (string, string, error) {
 	fileData, err := os.ReadFile(fileName)
+
 	if err != nil {
-		return "", ""
+		return "", "", fmt.Errorf("Failed to read the history at %s: %w", fileName, err)
 	}
-  if len(fileData) == 0 {
-    return "", ""
-  }
+
+	if len(fileData) == 0 {
+		return "", "", nil
+	}
+
 	sections := strings.Split(string(fileData), "Dynamic:")
-	return strings.TrimSpace(sections[0]), strings.TrimSpace(sections[1])
+	return strings.TrimSpace(sections[0]), strings.TrimSpace(sections[1]), nil
 }
 
-func writeHistoryToFile(fileName string, permanentHistory string, dynamicHistory string) {
+func writeHistoryToFile(fileName string, permanentHistory string, dynamicHistory string) error {
 	content := permanentHistory + "\n\nDynamic:\n" + dynamicHistory
 	err := os.WriteFile(fileName, []byte(content), 0644)
+
 	if err != nil {
-		fmt.Println("Failed to write to file:", err)
+		return fmt.Errorf("Failed to write to file: %w", err)
 	}
+
+	return nil
 }
 
 func truncateDynamicHistory(dynamicHistory string) string {
-	if len(dynamicHistory) > config.Context {
-		lines := strings.Split(dynamicHistory, "\n")
-		return strings.Join(lines[2:], "\n")
-	}
-	return dynamicHistory
+	lines := strings.Split(dynamicHistory, "\n")
+	return strings.Join(lines[2:], "\n")
 }
