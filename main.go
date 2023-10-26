@@ -5,205 +5,191 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
 
-func HexToANSI(hex string) (string, error) {
-	hex = strings.TrimPrefix(hex, "#")
-	red, err := strconv.ParseInt(hex[0:2], 16, 64)
+var config Settings
+var session Session
+var formatter *StatefulFormatter
+var history string
 
-	if err != nil {
-		return "", err
-	}
-
-	green, err := strconv.ParseInt(hex[2:4], 16, 64)
-
-	if err != nil {
-		return "", err
-	}
-
-	blue, err := strconv.ParseInt(hex[4:6], 16, 64)
-
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("\033[38;2;%d;%d;%dm", red, green, blue), nil
-}
-
-func readInput(config Settings) string {
-	var userInput string
-	userColor, err := HexToANSI(config.UserColor)
-
-	if err != nil {
-		fmt.Printf("Failed to process user color. Make sure it's in hex format! %v", err)
-	}
-
-	fmt.Print(userColor + config.Prompt)
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		line, err := reader.ReadString('\n')
-
-		if err != nil {
-			log.Fatal("Failed to read user input!", err)
-		}
-
-		line = strings.TrimSpace(line)
-
-		if strings.Contains(line, config.SubmitCommand) || strings.Contains(line, config.ClearCommand) || strings.Contains(line, config.ExitCommand) || strings.Contains(line, config.HistoryCommand) {
-			userInput += line
-			fmt.Print("\n")
-			break
-		}
-
-		userInput += line + "\n"
-	}
-	return userInput
-}
-
-func main() {
-	var (
-		session          Session
-		sessionSize      int
-		messagesToRemove int
-		history          string
-		formattedReply   string
-	)
-
-	if err := InitializeConfigFiles(); err != nil {
+func init() {
+	var err error
+	if err = InitializeConfigFiles(); err != nil {
 		log.Fatal(err)
 	}
-
-	config, err := readSettings(settingsPath)
-
-	if err != nil {
+	if config, err = readSettings(settingsPath); err != nil {
 		log.Fatal("Error reading configuration file: ", err)
 	}
 
-	InitializeColors(config)
-  history, err = readHistory(historyPath)
+	formatter = NewStatefulFormatter()
 
-  if err != nil {
-    fmt.Printf("%v", err)
-  }
-
+	if err = InitializeColors(formatter, config); err != nil {
+		log.Fatal(err)
+	}
 	if config.APIKey == "" {
 		log.Fatal("You need to add your API key in ~/.config/frnly/settings.conf")
 	}
-
 	if config.Session {
-		session, err = readSession(sessionPath)
-		if err != nil {
-			fmt.Printf("Failed to read from %s! Will proceed without persistent sessions\nError: %v", sessionPath, err)
+		if session, err = readSession(sessionPath); err != nil {
+			fmt.Printf("Error: %v. Will proceed without persistent sessions\n", err)
 		}
+		history, _ = readHistory(historyPath)
 	}
+}
+
+func readInput() string {
+	userColor, _ := HexToANSI(config.UserColor)
+	reader := bufio.NewReader(os.Stdin)
+	var sb strings.Builder
+
+	fmt.Print(userColor + config.Prompt + " ")
+	for {
+		line, _ := reader.ReadString('\n')
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, config.SubmitCommand) || isSpecialCommand(line) {
+			sb.WriteString(line)
+			fmt.Print("\n")
+			break
+		}
+		sb.WriteString(line + "\n")
+	}
+	return sb.String()
+}
+
+func isSpecialCommand(cmd string) bool {
+	return strings.Contains(cmd, config.ClearCommand) || strings.Contains(cmd, config.ExitCommand) || strings.Contains(cmd, config.HistoryCommand)
+}
+
+func main() {
+	var wg sync.WaitGroup
+	fmt.Println("\033[H\033[2J")
 
 	for {
-		userInput := readInput(config)
+		apiOutput := make(chan string)
+		typingQueue := make(chan string)
+		historyChannel := make(chan ChatMessage, 2)
 
-		if strings.Contains(userInput, config.ClearCommand) {
-			fmt.Print("\033[H\033[2J")
-			userInput = ""
+		wg.Add(1)
+
+		userInput := readInput()
+		if isSpecialCommand(userInput) {
+			handleSpecialCommands(&userInput, &wg)
 			continue
 		}
 
-    if strings.Contains(userInput, config.HistoryCommand) {
-      fmt.Print("\033[H\033[2J")
-			userInput = ""
-  	  botColor, err := HexToANSI(config.BotColor)
-
-	    if err != nil {
-		    fmt.Printf("Failed to process bot color. Make sure it's in hex format! %v", err)
-	    }
- 
-      fmt.Println(botColor + history)
-      continue
-    }
-
-		if strings.Contains(userInput, config.ExitCommand) {
-			break
-		}
-
-		userInput = strings.ReplaceAll(userInput, config.SubmitCommand, "")
+		processUserInput(&userInput, apiOutput, typingQueue, &wg, historyChannel)
+		wg.Wait()
 
 		if config.Session {
-
-			session.Dynamic = append(session.Dynamic, ChatMessage{
-				Role:    "user",
-				Content: userInput,
-			})
-
-      history += "user: " + userInput + "\n"
-
-			reply, err := getAssistantReply(config, session)
-
-			if err != nil {
-				fmt.Println("Error: ", err)
-				return
+			updateSession()
+			for msg := range historyChannel {
+				updateHistory(msg.Role, msg.Content)
 			}
-
-      session.Dynamic = append(session.Dynamic, ChatMessage{
-				Role:    "assistant",
-				Content: reply,
-			})
-
-			formattedReply = applyFormatting(reply)
-			history += "assistant: " + formattedReply + "\n"
 		} else {
-			session.Dynamic = append(session.Dynamic, ChatMessage{
-				Role:    "user",
-				Content: userInput,
-			})
-
-			reply, err := getAssistantReply(config, session)
-
-			if err != nil {
-				fmt.Println("Error: ", err)
-				return
-			}
-
-			formattedReply = applyFormatting(reply)
-      session = Session{}
+			session.Dynamic = session.Dynamic[:0]
 		}
-
-		fmt.Println(formattedReply + "\n")
-
-		if config.Session {
-			for _, msg := range session.Dynamic {
-				sessionSize += len(msg.Content)
-			}
-
-			excess := sessionSize - config.Context
-
-			if excess > 0 {
-				for i, msg := range session.Dynamic {
-					excess -= len(msg.Content)
-					if excess <= 0 {
-						messagesToRemove = i + 1
-						break
-					}
-				}
-			}
-
-			if messagesToRemove > 0 && messagesToRemove <= len(session.Dynamic) {
-				session.Dynamic = session.Dynamic[messagesToRemove:]
-			}
-
-			err = writeSession(sessionPath, session)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			err = writeHistory(historyPath, history)
-
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
-
-		userInput = ""
 	}
+}
+
+func handleSpecialCommands(userInput *string, wg *sync.WaitGroup) {
+	switch {
+	case strings.Contains(*userInput, config.ClearCommand):
+		fmt.Print("\033[H\033[2J")
+		wg.Done()
+	case strings.Contains(*userInput, config.HistoryCommand):
+		fmt.Print("\033[H\033[2J")
+		if history, err := readHistory(historyPath); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(history)
+		}
+		wg.Done()
+	case strings.Contains(*userInput, config.ExitCommand):
+		os.Exit(0)
+	}
+	*userInput = ""
+}
+
+func processUserInput(userInput *string, apiOutput chan string, typingQueue chan string, wg *sync.WaitGroup, historyChannel chan ChatMessage) {
+	*userInput = strings.ReplaceAll(*userInput, config.SubmitCommand, "")
+	userColor, _ := HexToANSI(config.UserColor)
+
+	session.Dynamic = append(session.Dynamic, ChatMessage{
+		Role:    "user",
+		Content: *userInput,
+	})
+
+	historyChannel <- ChatMessage{
+		Role:    "\033[0muser",
+		Content: fmt.Sprintf("%s%s", userColor, *userInput),
+	}
+
+	go streamCompletion(config, session, apiOutput)
+	go processAPIOutput(apiOutput, typingQueue)
+	go typeResponse(typingQueue, wg, historyChannel)
+}
+
+func processAPIOutput(apiOutput chan string, typingQueue chan string) {
+	for token := range apiOutput {
+		typingQueue <- token
+	}
+	close(typingQueue)
+}
+
+func typeResponse(typingQueue chan string, wg *sync.WaitGroup, historyChannel chan ChatMessage) {
+	var response, formattedResponse strings.Builder
+	for text := range typingQueue {
+		response.WriteString(text)
+		for _, char := range text {
+			formattedChar := formatter.ApplyFormatting(char)
+			formattedResponse.WriteString(formattedChar)
+			fmt.Print(formattedChar)
+			time.Sleep(24 * time.Millisecond)
+		}
+	}
+	fmt.Print("\n\n")
+	session.Dynamic = append(session.Dynamic, ChatMessage{
+		Role:    "assistant",
+		Content: response.String(),
+	})
+
+	historyChannel <- ChatMessage{
+		Role:    "\033[0massistant",
+		Content: formattedResponse.String(),
+	}
+	close(historyChannel)
+	response.Reset()
+	formattedResponse.Reset()
+	wg.Done()
+}
+
+func updateSession() {
+	var sessionSize, messagesToRemove int
+	for _, msg := range session.Dynamic {
+		sessionSize += len(msg.Content)
+	}
+	excess := sessionSize - config.Context
+	if excess > 0 {
+		for i, msg := range session.Dynamic {
+			excess -= len(msg.Content)
+			if excess <= 0 {
+				messagesToRemove = i + 1
+				break
+			}
+		}
+		if messagesToRemove < len(session.Dynamic) {
+			session.Dynamic = session.Dynamic[messagesToRemove:]
+		} else {
+			session.Dynamic = []ChatMessage{}
+		}
+	}
+	writeSession(sessionPath, session)
+}
+
+func updateHistory(role, content string) {
+	history += fmt.Sprintf("%s: %s\n\n", role, content)
+	writeHistory(historyPath, history)
 }

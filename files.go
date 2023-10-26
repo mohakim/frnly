@@ -39,10 +39,10 @@ func InitializeConfigFiles() error {
 API_KEY=""
 
 # GPT Model and Tuning
-Temperature=0.2
+Temperature=0.9
 Model="gpt-4-0314"
 Session=True
-Context=3000
+Context=8192
 
 # Styling
 UserColor="#4499FF"

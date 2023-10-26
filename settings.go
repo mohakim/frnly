@@ -8,22 +8,22 @@ import (
 )
 
 type Settings struct {
-	APIKey          string
-	Temperature     float32
-	Model           string
-	Session         bool
-	Context         int
-	UserColor       string
-	BotColor        string
-	CodeBlock       string
-	TextBlock       string
-	Comments        string
-	References      string
-	Prompt          string
-	ClearCommand    string
-	SubmitCommand   string
-  HistoryCommand  string
-	ExitCommand     string
+	APIKey         string
+	Temperature    float32
+	Model          string
+	Session        bool
+	Context        int
+	UserColor      string
+	BotColor       string
+	CodeBlock      string
+	TextBlock      string
+	Comments       string
+	References     string
+	Prompt         string
+	ClearCommand   string
+	SubmitCommand  string
+	HistoryCommand string
+	ExitCommand    string
 }
 
 func readSettings(filePath string) (Settings, error) {
@@ -84,8 +84,8 @@ func readSettings(filePath string) (Settings, error) {
 			settings.ClearCommand = value
 		case "Submit":
 			settings.SubmitCommand = value
-    case "History":
-      settings.HistoryCommand = value
+		case "History":
+			settings.HistoryCommand = value
 		case "Exit":
 			settings.ExitCommand = value
 		}
