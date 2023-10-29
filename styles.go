@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
+	"unsafe"
 )
 
 type StatefulFormatter struct {
@@ -22,7 +24,7 @@ func NewStatefulFormatter() *StatefulFormatter {
 	}
 }
 
-func (sf *StatefulFormatter) ApplyFormatting(ch rune) string {
+func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 	sf.mu.Lock()
 	defer sf.mu.Unlock()
 
@@ -84,6 +86,24 @@ func getCurrentState(stateStack []string) string {
 	return stateStack[len(stateStack)-1]
 }
 
+func getTerminalWidth() int {
+	var ws struct {
+		rows    uint16
+		cols    uint16
+		xpixels uint16
+		ypixels uint16
+	}
+
+	wsPtr := uintptr(unsafe.Pointer(&ws))
+
+	ret, _, _ := syscall.Syscall(syscall.SYS_IOCTL, uintptr(syscall.Stdout), uintptr(syscall.TIOCGWINSZ), wsPtr)
+	if int(ret) == -1 {
+		return 100
+	}
+
+	return int(ws.cols)
+}
+
 func updateStateStack(stack []string, state string) []string {
 	if len(stack) > 0 && stack[len(stack)-1] == state {
 		return stack[:len(stack)-1]
@@ -91,7 +111,7 @@ func updateStateStack(stack []string, state string) []string {
 	return append(stack, state)
 }
 
-func HexToANSI(hex string) (string, error) {
+func hexToANSI(hex string) (string, error) {
 	if hex == "#GGGGGG" {
 		return "\033[1m", nil
 	}
@@ -111,7 +131,7 @@ func HexToANSI(hex string) (string, error) {
 	return fmt.Sprintf("\033[38;2;%d;%d;%dm", red, green, blue), nil
 }
 
-func InitializeColors(sf *StatefulFormatter, settings Settings) error {
+func initializeColors(sf *StatefulFormatter, settings Settings) error {
 	sf.ColorMap = make(map[string]func(string) (string, error))
 	colorFields := []struct {
 		Name string
@@ -132,7 +152,7 @@ func InitializeColors(sf *StatefulFormatter, settings Settings) error {
 
 func colorText(colorHex, resetColor string) func(string) (string, error) {
 	return func(text string) (string, error) {
-		ansiColor, err := HexToANSI(colorHex)
+		ansiColor, err := hexToANSI(colorHex)
 		if err != nil {
 			return "", errors.New("Hex to ANSI conversion failed")
 		}

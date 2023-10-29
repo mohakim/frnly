@@ -8,23 +8,20 @@ import (
 	"path/filepath"
 )
 
-const configDirName = ".config/frnly"
-
 var (
-	configDir    string
 	historyPath  string
 	settingsPath string
 	sessionPath  string
 )
 
-func InitializeConfigFiles() error {
+func initializeConfig() error {
 	homeDir, err := os.UserHomeDir()
 
 	if err != nil {
 		return fmt.Errorf("Couldn't determine the user's home directory: %w", err)
 	}
 
-	configDir = filepath.Join(homeDir, configDirName)
+  configDir := filepath.Join(homeDir, ".config/frnly")
 
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		log.Fatal("Couldn't create the configuration directory: ", err)
@@ -94,11 +91,11 @@ func createFile(filePath string, defaultContent string) error {
 	return nil
 }
 
-func readHistory(fileName string) (string, error) {
-	fileData, err := os.ReadFile(fileName)
+func readHistory() (string, error) {
+	fileData, err := os.ReadFile(historyPath)
 
 	if err != nil {
-		return "", fmt.Errorf("Failed to read the history at %s: %w", fileName, err)
+		return "", fmt.Errorf("Failed to read the history at %s: %w", historyPath, err)
 	}
 
 	if len(fileData) == 0 {
@@ -108,8 +105,8 @@ func readHistory(fileName string) (string, error) {
 	}
 }
 
-func writeHistory(fileName string, history string) error {
-	err := os.WriteFile(fileName, []byte(history), 0644)
+func writeHistory() error {
+	err := os.WriteFile(historyPath, []byte(history), 0644)
 
 	if err != nil {
 		return fmt.Errorf("Failed to write to file: %w", err)
@@ -118,14 +115,12 @@ func writeHistory(fileName string, history string) error {
 	return nil
 }
 
-func readSession(fileName string) (Session, error) {
-	fileData, err := os.ReadFile(fileName)
+func readSession() (Session, error) {
+	fileData, err := os.ReadFile(sessionPath)
 
 	if err != nil {
 		return Session{}, fmt.Errorf("Failed to open file: %w", err)
 	}
-
-	var session Session
 
 	if err := json.Unmarshal(fileData, &session); err != nil {
 		return Session{}, fmt.Errorf("Failed to unmarshal session: %w", err)
@@ -134,14 +129,14 @@ func readSession(fileName string) (Session, error) {
 	return session, nil
 }
 
-func writeSession(filename string, session Session) error {
+func writeSession() error {
 	content, err := json.MarshalIndent(session, "", " ")
 
 	if err != nil {
 		return fmt.Errorf("Failed to marshal session: %w", err)
 	}
 
-	err = os.WriteFile(filename, content, 0644)
+	err = os.WriteFile(sessionPath, content, 0644)
 
 	if err != nil {
 		return fmt.Errorf("Failed to write session to file: %w", err)
