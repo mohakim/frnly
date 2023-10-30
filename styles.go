@@ -14,6 +14,7 @@ type StatefulFormatter struct {
 	stateStack  []string
 	symbolCount map[string]int
 	mu          sync.Mutex
+  charBuffer  strings.Builder
 	ColorMap    map[string]func(string) (string, error)
 }
 
@@ -31,33 +32,49 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 	var result strings.Builder
 	char := string(ch)
 	state := getCurrentState(sf.stateStack)
-
+  stateChange := false
 	switch ch {
 	case '`', '*', '#', '/':
 		sf.symbolCount[char]++
+    sf.charBuffer.WriteString(char)
 	case '\n', ' ':
 		for symbol, count := range sf.symbolCount {
 			if ch == '\n' {
 				if symbol == "`" && (count == 1 || count == 2) {
 					sf.stateStack = updateStateStack(sf.stateStack, "isTextBlock")
+          stateChange = true
 				} else if symbol == "/" && state == "isComment" {
 					sf.stateStack = updateStateStack(sf.stateStack, "isComment")
+          stateChange = true
 				} else if symbol == "`" && count == 3 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isCode")
-				}
+          stateChange = true
+				} else if symbol == "*" && count > 0 {
+					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+          stateChange = true
+        }
 			} else if ch == ' ' {
 				if symbol == "/" && count == 2 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isComment")
-					formatted, _ := sf.ColorMap["isComment"]("//")
-					result.WriteString(formatted)
+					//formatted, _ := sf.ColorMap["isComment"]("//")
+					//result.WriteString(formatted)
 				} else if symbol == "#" && count > 0 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+          stateChange = true
 				} else if symbol == "`" && count == 1 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isReference")
-				}
+          stateChange = true
+				} else if symbol == "*" && count > 0 && getCurrentState(sf.stateStack) == "isBold" {
+					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+          stateChange = true
+        }
 			}
 			sf.symbolCount[symbol] = 0
 		}
+    if !stateChange {
+      result.WriteString(sf.flushCharBuffer())
+    }
+	  sf.charBuffer.Reset()
 		result.WriteString(char)
 	default:
 		// Process accumulated symbols
@@ -65,18 +82,32 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 			switch {
 			case symbol == "`" && count == 3:
 				sf.stateStack = updateStateStack(sf.stateStack, "isCode")
+        stateChange = true
 			case symbol == "*" && count > 0 && state != "isCode":
 				sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+        stateChange = true
 			case symbol == "`" && count == 1 && state != "isCode":
 				sf.stateStack = updateStateStack(sf.stateStack, "isReference")
+        stateChange = true
 			}
 			sf.symbolCount[symbol] = 0
 		}
+    if !stateChange {
+      result.WriteString(sf.flushCharBuffer())
+    }
+	  sf.charBuffer.Reset()
 		formatted, _ := sf.ColorMap[getCurrentState(sf.stateStack)](string(ch))
 		result.WriteString(formatted)
 	}
 
 	return result.String()
+}
+
+func (sf *StatefulFormatter) flushCharBuffer() string {
+	state := getCurrentState(sf.stateStack)
+	colorFunc := sf.ColorMap[state]
+	coloredStr, _ := colorFunc(sf.charBuffer.String())
+	return coloredStr
 }
 
 func getCurrentState(stateStack []string) string {
@@ -112,9 +143,10 @@ func updateStateStack(stack []string, state string) []string {
 }
 
 func hexToANSI(hex string) (string, error) {
-	if hex == "#GGGGGG" {
-		return "\033[1m", nil
-	}
+  if hex == "#GGGGGG" {
+    botColor, _ := hexToANSI(config.BotColor)
+    return fmt.Sprintf("%s\033[1m", botColor), nil
+  }
 	hex = strings.TrimPrefix(hex, "#")
 	red, err := strconv.ParseInt(hex[0:2], 16, 64)
 	if err != nil {

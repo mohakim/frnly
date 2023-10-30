@@ -90,25 +90,36 @@ func typeResponse(apiOutput chan string, wg *sync.WaitGroup, historyChannel chan
   maxWidth = getTerminalWidth()
 
 	for token := range apiOutput {
-		response.WriteString(token) 
-    wordLength := len(token)
-    lineLength += wordLength
-    if lineLength+wordLength > maxWidth {
-      fmt.Print("\n")
-      skipSpace = true
-      lineLength = wordLength
+		response.WriteString(token)
+
+    shouldWrap := getCurrentState(formatter.stateStack) != "isCode" && getCurrentState(formatter.stateStack) != "isComment"
+    if shouldWrap {
+      wordLength := len(token)
+      lineLength += wordLength
+      if lineLength+wordLength > maxWidth {
+        fmt.Print("\n")
+        skipSpace = true
+        lineLength = wordLength
+      }
     }
     for _, char := range token {
       if skipSpace {
         skipSpace = false
         continue
       }
+      if char == '\n' {
+        lineLength = 0
+      }
+      if char == '\t' {
+        char = ' '
+        fmt.Print(string(char))
+      }
       formattedChar := formatter.applyFormatting(char)
       time.Sleep(24 * time.Millisecond)
       fmt.Print(formattedChar)
     }
   }
-	fmt.Print("\n")
+	fmt.Print("\n\n")
 	session.Dynamic = append(session.Dynamic, ChatMessage{
 		Role:    "assistant",
 		Content: response.String(),
