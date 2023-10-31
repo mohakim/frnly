@@ -36,17 +36,17 @@ func initializeConfig() error {
 API_KEY=""
 
 # GPT Model and Tuning
-Temperature=0.9
+Temperature=0.5
 Model="gpt-4-0314"
-Session=True
+Session=False
 Context=8192
 
 # Styling
-UserColor="#4499FF"
-BotColor="#00FF00"
-CodeBlock="#FF00FF"
-TextBlock="#FFFF00"
-Comments="#666666"
+UserColor="#55DD55"
+BotColor="#A6E3A1"
+CodeBlock="#7700AA"
+TextBlock="#94E2D5"
+Comments="#BAC2DE"
 References="#FFAA00"
 
 # Interaction

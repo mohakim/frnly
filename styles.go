@@ -31,7 +31,7 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 
 	var result strings.Builder
 	char := string(ch)
-	state := getCurrentState(sf.stateStack)
+	state := getState(sf.stateStack)
   stateChange := false
 	switch ch {
 	case '`', '*', '#', '/':
@@ -64,7 +64,7 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 				} else if symbol == "`" && count == 1 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isReference")
           stateChange = true
-				} else if symbol == "*" && count > 0 && getCurrentState(sf.stateStack) == "isBold" {
+				} else if symbol == "*" && count > 0 && getState(sf.stateStack) == "isBold" {
 					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
           stateChange = true
         }
@@ -96,7 +96,7 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
       result.WriteString(sf.flushCharBuffer())
     }
 	  sf.charBuffer.Reset()
-		formatted, _ := sf.ColorMap[getCurrentState(sf.stateStack)](string(ch))
+		formatted, _ := sf.ColorMap[getState(sf.stateStack)](string(ch))
 		result.WriteString(formatted)
 	}
 
@@ -104,13 +104,13 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 }
 
 func (sf *StatefulFormatter) flushCharBuffer() string {
-	state := getCurrentState(sf.stateStack)
+	state := getState(sf.stateStack)
 	colorFunc := sf.ColorMap[state]
 	coloredStr, _ := colorFunc(sf.charBuffer.String())
 	return coloredStr
 }
 
-func getCurrentState(stateStack []string) string {
+func getState(stateStack []string) string {
 	if len(stateStack) == 0 {
 		return "Default"
 	}
