@@ -24,7 +24,8 @@ func readInput() {
 		if isCommand(&line) { 
 			sb.WriteString(line)
 			fmt.Print("\n")
-      handleCommand(&line)
+      fullStr := sb.String()
+      handleCommand(&fullStr)
 			break
 		}
 
@@ -134,7 +135,7 @@ func typeResponse(apiOutput chan string, wg *sync.WaitGroup, historyChannel chan
       fmt.Print(formattedChar)
     }
   }
-	fmt.Print("\n\n")
+	fmt.Print("\n")
 	session.Dynamic = append(session.Dynamic, ChatMessage{
 		Role:    "assistant",
 		Content: response.String(),

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+  "regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,6 +16,8 @@ type StatefulFormatter struct {
 	symbolCount map[string]int
 	mu          sync.Mutex
   charBuffer  strings.Builder
+  lang        strings.Builder
+  readLang    bool
 	ColorMap    map[string]func(string) (string, error)
 }
 
@@ -29,64 +32,96 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
 	sf.mu.Lock()
 	defer sf.mu.Unlock()
 
-	var result strings.Builder
-	char := string(ch)
-	state := getState(sf.stateStack)
-  stateChange := false
-	switch ch {
-	case '`', '*', '#', '/':
-		sf.symbolCount[char]++
+	var (
+    result      strings.Builder
+    char        = string(ch)
+    state       = getState(sf.stateStack)
+    buffer      = sf.charBuffer.String()
+    lang        = sf.lang.String()
+    stateChange bool
+    delimeter   = func (s string, slice []string) bool {
+      for _, item := range slice {
+        if item == s && s != ""{
+          return true
+        }
+      }
+      return false
+    }
+  )
+
+	switch {
+  case regexp.MustCompile(`[\p{P}\p{S}]`).MatchString(char) && char != ".":
+    if char == "*" || char == "`"{
+      sf.symbolCount[char]++
+    }
     sf.charBuffer.WriteString(char)
-	case '\n', ' ':
-		for symbol, count := range sf.symbolCount {
-			if ch == '\n' {
-				if symbol == "`" && (count == 1 || count == 2) {
+	case ch == '\n', ch == ' ':
+		if ch == '\n' {
+      if state == "isCode" && sf.readLang {
+        sf.readLang = false
+      } else if state == "isCommentSingle" {
+        result.WriteString(sf.flushCharBuffer())
+        sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
+        stateChange = true
+      } else if delimeter(buffer, commentMap[lang][2:]) {
+        if state == "isCommentMulti" {
+          result.WriteString(sf.flushCharBuffer())
+        }
+        sf.stateStack = updateStateStack(sf.stateStack, "isCommentMulti")
+      }
+      for symbol, count := range sf.symbolCount {
+        if symbol == "`" && (count == 1 || count == 2) && !strings.Contains(state, "isC") {
 					sf.stateStack = updateStateStack(sf.stateStack, "isTextBlock")
-          stateChange = true
-				} else if symbol == "/" && state == "isComment" {
-					sf.stateStack = updateStateStack(sf.stateStack, "isComment")
           stateChange = true
 				} else if symbol == "`" && count == 3 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isCode")
           stateChange = true
-				} else if symbol == "*" && count > 0 {
+				} else if symbol == "*" && count > 0 && !strings.Contains(state, "isC") {
 					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
           stateChange = true
         }
-			} else if ch == ' ' {
-				if symbol == "/" && count == 2 {
-					sf.stateStack = updateStateStack(sf.stateStack, "isComment")
-					//formatted, _ := sf.ColorMap["isComment"]("//")
-					//result.WriteString(formatted)
-				} else if symbol == "#" && count > 0 {
-					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+      }
+    } else if ch == ' ' {
+      if delimeter(buffer, commentMap[lang][:2]) {
+        sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
+      } else if delimeter(buffer, commentMap[lang][2:]) {
+        fmt.Printf("\n\nmulti baby\n\n")
+        if state == "isCommentMulti" {
+          result.WriteString(sf.flushCharBuffer())
+        }
+        sf.stateStack = updateStateStack(sf.stateStack, "isCommentMulti")
+      }
+      for symbol, count := range sf.symbolCount {
+        if symbol == "`" && count == 1 && !strings.Contains(state, "isC") {
+          sf.stateStack = updateStateStack(sf.stateStack, "isReference")
           stateChange = true
-				} else if symbol == "`" && count == 1 {
-					sf.stateStack = updateStateStack(sf.stateStack, "isReference")
-          stateChange = true
-				} else if symbol == "*" && count > 0 && getState(sf.stateStack) == "isBold" {
-					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+        } else if symbol == "*" && count > 0 && state == "isBold"{
+          sf.stateStack = updateStateStack(sf.stateStack, "isBold")
           stateChange = true
         }
-			}
-			sf.symbolCount[symbol] = 0
-		}
+      }
+    }
+    for k := range sf.symbolCount {
+      delete(sf.symbolCount, k)
+    }
+       
     if !stateChange {
       result.WriteString(sf.flushCharBuffer())
     }
 	  sf.charBuffer.Reset()
 		result.WriteString(char)
 	default:
-		// Process accumulated symbols
 		for symbol, count := range sf.symbolCount {
 			switch {
 			case symbol == "`" && count == 3:
 				sf.stateStack = updateStateStack(sf.stateStack, "isCode")
+        sf.lang.Reset()
+        sf.readLang = true
         stateChange = true
-			case symbol == "*" && count > 0 && state != "isCode":
+			case symbol == "*" && count > 0 && !strings.Contains(state, "isC"):
 				sf.stateStack = updateStateStack(sf.stateStack, "isBold")
         stateChange = true
-			case symbol == "`" && count == 1 && state != "isCode":
+			case symbol == "`" && count == 1 && !strings.Contains(state, "isC"):
 				sf.stateStack = updateStateStack(sf.stateStack, "isReference")
         stateChange = true
 			}
@@ -95,9 +130,13 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
     if !stateChange {
       result.WriteString(sf.flushCharBuffer())
     }
-	  sf.charBuffer.Reset()
-		formatted, _ := sf.ColorMap[getState(sf.stateStack)](string(ch))
-		result.WriteString(formatted)
+    if sf.readLang {
+      sf.lang.WriteRune(ch)
+    } else {
+      formatted, _ := sf.ColorMap[getState(sf.stateStack)](string(ch))
+      result.WriteString(formatted)
+    }
+    sf.charBuffer.Reset()
 	}
 
 	return result.String()
@@ -107,6 +146,7 @@ func (sf *StatefulFormatter) flushCharBuffer() string {
 	state := getState(sf.stateStack)
 	colorFunc := sf.ColorMap[state]
 	coloredStr, _ := colorFunc(sf.charBuffer.String())
+  sf.charBuffer.Reset()
 	return coloredStr
 }
 
@@ -148,19 +188,13 @@ func hexToANSI(hex string) (string, error) {
     return fmt.Sprintf("%s\033[1m", botColor), nil
   }
 	hex = strings.TrimPrefix(hex, "#")
-	red, err := strconv.ParseInt(hex[0:2], 16, 64)
-	if err != nil {
-		return "", err
+	r, err := strconv.ParseInt(hex[0:2], 16, 64)
+	g, err2 := strconv.ParseInt(hex[2:4], 16, 64)
+	b, err3 := strconv.ParseInt(hex[4:6], 16, 64)
+	if err != nil || err2 != nil || err3 != nil {
+		return "", errors.New("Invalid HEX")
 	}
-	green, err := strconv.ParseInt(hex[2:4], 16, 64)
-	if err != nil {
-		return "", err
-	}
-	blue, err := strconv.ParseInt(hex[4:6], 16, 64)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("\033[38;2;%d;%d;%dm", red, green, blue), nil
+	return fmt.Sprintf("\033[38;2;%d;%d;%dm", r, g, b), nil
 }
 
 func initializeColors(sf *StatefulFormatter, settings Settings) error {
@@ -172,13 +206,15 @@ func initializeColors(sf *StatefulFormatter, settings Settings) error {
 		{"Default", settings.BotColor},
 		{"isCode", settings.CodeBlock},
 		{"isBold", "#GGGGGG"},
-		{"isComment", settings.Comments},
+		{"isCommentSingle", settings.Comments},
+		{"isCommentMulti", settings.Comments},
 		{"isTextBlock", settings.TextBlock},
 		{"isReference", settings.References},
 	}
 	for _, color := range colorFields {
 		sf.ColorMap[color.Name] = colorText(color.Hex, settings.BotColor)
 	}
+  sf.lang.WriteString("python")
 	return nil
 }
 
