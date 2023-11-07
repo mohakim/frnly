@@ -85,7 +85,6 @@ func (sf *StatefulFormatter) applyFormatting(ch rune) string {
       if delimeter(buffer, commentMap[lang][:2]) {
         sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
       } else if delimeter(buffer, commentMap[lang][2:]) {
-        fmt.Printf("\n\nmulti baby\n\n")
         if state == "isCommentMulti" {
           result.WriteString(sf.flushCharBuffer())
         }
