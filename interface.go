@@ -29,7 +29,7 @@ func readInput() {
 			break
 		}
 
-		sb.WriteString(line + "\n")
+	  ui.updateChatArea(line)
 	}	
 }
 
