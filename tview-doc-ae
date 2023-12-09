@@ -1,0 +1,950 @@
+
+The interface's read-only functions are not called concurrently by the package (provided that users of the package don't call Table.Draw() in a separate goroutine, which would be uncommon and is not encouraged).
+type TableContentReadOnly ¶
+
+type TableContentReadOnly struct{}
+
+TableContentReadOnly is an empty struct which implements the write operations of the TableContent interface. None of the implemented functions do anything. You can embed this struct into your own structs to free yourself from having to implement the empty write functions of TableContent. See demos/table/virtualtable for an example.
+func (TableContentReadOnly) Clear ¶
+
+func (t TableContentReadOnly) Clear()
+
+Clear does not do anything.
+func (TableContentReadOnly) InsertColumn ¶
+
+func (t TableContentReadOnly) InsertColumn(column int)
+
+InsertColumn does not do anything.
+func (TableContentReadOnly) InsertRow ¶
+
+func (t TableContentReadOnly) InsertRow(row int)
+
+InsertRow does not do anything.
+func (TableContentReadOnly) RemoveColumn ¶
+
+func (t TableContentReadOnly) RemoveColumn(column int)
+
+RemoveColumn does not do anything.
+func (TableContentReadOnly) RemoveRow ¶
+
+func (t TableContentReadOnly) RemoveRow(row int)
+
+RemoveRow does not do anything.
+func (TableContentReadOnly) SetCell ¶
+
+func (t TableContentReadOnly) SetCell(row, column int, cell *TableCell)
+
+SetCell does not do anything.
+type TextArea ¶
+
+type TextArea struct {
+	*Box
+	// contains filtered or unexported fields
+}
+
+    Navigation and Editing
+
+TextArea implements a simple text editor for multi-line text. Multi-color text is not supported. Word-wrapping is enabled by default but can be turned off or be changed to character-wrapping.
+
+At this point, a text area cannot be added to a Form. This will be added in the future.
+Navigation and Editing
+¶
+
+A text area is always in editing mode and no other mode exists. The following keys can be used to move the cursor (subject to what the user's terminal supports and how it is configured):
+
+    Left arrow: Move left.
+    Right arrow: Move right.
+    Down arrow: Move down.
+    Up arrow: Move up.
+    Ctrl-A, Home: Move to the beginning of the current line.
+    Ctrl-E, End: Move to the end of the current line.
+    Ctrl-F, page down: Move down by one page.
+    Ctrl-B, page up: Move up by one page.
+    Alt-Up arrow: Scroll the page up, leaving the cursor in its position.
+    Alt-Down arrow: Scroll the page down, leaving the cursor in its position.
+    Alt-Left arrow: Scroll the page to the left, leaving the cursor in its position. Ignored if wrapping is enabled.
+    Alt-Right arrow: Scroll the page to the right, leaving the cursor in its position. Ignored if wrapping is enabled.
+    Alt-B, Ctrl-Left arrow: Jump to the beginning of the current or previous word.
+    Alt-F, Ctrl-Right arrow: Jump to the end of the current or next word.
+
+Words are defined according to Unicode Standard Annex #29. We skip any words that contain only spaces or punctuation.
+
+Entering a character will insert it at the current cursor location. Subsequent characters are shifted accordingly. If the cursor is outside the visible area, any changes to the text will move it into the visible area. The following keys can also be used to modify the text:
+
+    Enter: Insert a newline character (see NewLine).
+    Tab: Insert a tab character (\t). It will be rendered like TabSize spaces. (This may eventually be changed to behave like regular tabs.)
+    Ctrl-H, Backspace: Delete one character to the left of the cursor.
+    Ctrl-D, Delete: Delete the character under the cursor (or the first character on the next line if the cursor is at the end of a line).
+    Alt-Backspace: Delete the word to the left of the cursor.
+    Ctrl-K: Delete everything under and to the right of the cursor until the next newline character.
+    Ctrl-W: Delete from the start of the current word to the left of the cursor.
+    Ctrl-U: Delete the current line, i.e. everything after the last newline character before the cursor up until the next newline character. This may span multiple visible rows if wrapping is enabled.
+
+Text can be selected by moving the cursor while holding the Shift key, to the extent that this is supported by the user's terminal. The Ctrl-L key can be used to select the entire text. (Ctrl-A already binds to the "Home" key.)
+
+When text is selected:
+
+    Entering a character will replace the selected text with the new character.
+    Backspace, delete, Ctrl-H, Ctrl-D: Delete the selected text.
+    Ctrl-Q: Copy the selected text into the clipboard, unselect the text.
+    Ctrl-X: Copy the selected text into the clipboard and delete it.
+    Ctrl-V: Replace the selected text with the clipboard text. If no text is selected, the clipboard text will be inserted at the cursor location.
+
+The Ctrl-Q key was chosen for the "copy" function because the Ctrl-C key is the default key to stop the application. If your application frees up the global Ctrl-C key and you want to bind it to the "copy to clipboard" function, you may use Box.SetInputCapture to override the Ctrl-Q key to implement copying to the clipboard. Note that using your terminal's / operating system's key bindings for copy+paste functionality may not have the expected effect as tview will not be able to handle these keys. Pasting text using your operating system's or terminal's own methods may be very slow as each character will be pasted individually.
+
+The default clipboard is an internal text buffer, i.e. the operating system's clipboard is not used. If you want to implement your own clipboard (or make use of your operating system's clipboard), you can use TextArea.SetClipboard which provides all the functionality needed to implement your own clipboard.
+
+The text area also supports Undo:
+
+    Ctrl-Z: Undo the last change.
+    Ctrl-Y: Redo the last Undo change.
+
+Undo does not affect the clipboard.
+
+If the mouse is enabled, the following actions are available:
+
+    Left click: Move the cursor to the clicked position or to the end of the line if past the last character.
+    Left double-click: Select the word under the cursor.
+    Left click while holding the Shift key: Select text.
+    Scroll wheel: Scroll the text.
+
+func NewTextArea ¶
+
+func NewTextArea() *TextArea
+
+NewTextArea returns a new text area. Use TextArea.SetText to set the initial text.
+func (*TextArea) Draw ¶
+
+func (t *TextArea) Draw(screen tcell.Screen)
+
+Draw draws this primitive onto the screen.
+func (*TextArea) Focus ¶
+
+func (t *TextArea) Focus(delegate func(p Primitive))
+
+Focus is called when this primitive receives focus.
+func (*TextArea) GetCursor ¶
+
+func (t *TextArea) GetCursor() (fromRow, fromColumn, toRow, toColumn int)
+
+GetCursor returns the current cursor position where the first character of the entire text is in row 0, column 0. If the user has selected text, the "from" values will refer to the beginning of the selection and the "to" values to the end of the selection (exclusive). They are the same if there is no selection.
+func (*TextArea) GetDisabled ¶
+
+func (t *TextArea) GetDisabled() bool
+
+GetDisabled returns whether or not the item is disabled / read-only.
+func (*TextArea) GetFieldHeight ¶
+
+func (t *TextArea) GetFieldHeight() int
+
+GetFieldHeight returns this primitive's field height.
+func (*TextArea) GetFieldWidth ¶
+
+func (t *TextArea) GetFieldWidth() int
+
+GetFieldWidth returns this primitive's field width.
+func (*TextArea) GetLabel ¶
+
+func (t *TextArea) GetLabel() string
+
+GetLabel returns the text to be displayed before the text area.
+func (*TextArea) GetLabelStyle ¶
+
+func (t *TextArea) GetLabelStyle() tcell.Style
+
+GetLabelStyle returns the style of the label.
+func (*TextArea) GetLabelWidth ¶
+
+func (t *TextArea) GetLabelWidth() int
+
+GetLabelWidth returns the screen width of the label.
+func (*TextArea) GetOffset ¶
+
+func (t *TextArea) GetOffset() (row, column int)
+
+GetOffset returns the text's offset, that is, the number of rows and columns skipped during drawing at the top or on the left, respectively. Note that the column offset is ignored if wrapping is enabled.
+func (*TextArea) GetPlaceholderStyle ¶
+
+func (t *TextArea) GetPlaceholderStyle() tcell.Style
+
+GetPlaceholderStyle returns the style of the placeholder text.
+func (*TextArea) GetSelection ¶
+
+func (t *TextArea) GetSelection() (text string, start int, end int)
+
+GetSelection returns the currently selected text and its start and end positions within the entire text as a half-open interval. If the returned text is an empty string, the start and end positions are the same and can be interpreted as the cursor position.
+
+Calling this function will result in string allocations as well as a search for text positions. This is expensive if the text has been edited extensively already. Use TextArea.HasSelection first if you are only interested in selected text.
+func (*TextArea) GetText ¶
+
+func (t *TextArea) GetText() string
+
+GetText returns the entire text of the text area. Note that this will newly allocate the entire text.
+func (*TextArea) GetTextLength ¶
+
+func (t *TextArea) GetTextLength() int
+
+GetTextLength returns the string length of the text in the text area.
+func (*TextArea) GetTextStyle ¶
+
+func (t *TextArea) GetTextStyle() tcell.Style
+
+GetTextStyle returns the style of the text.
+func (*TextArea) HasSelection ¶
+
+func (t *TextArea) HasSelection() bool
+
+HasSelection returns whether the selected text is non-empty.
+func (*TextArea) InputHandler ¶
+
+func (t *TextArea) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+
+InputHandler returns the handler for this primitive.
+func (*TextArea) MouseHandler ¶
+
+func (t *TextArea) MouseHandler() func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
+
+MouseHandler returns the mouse handler for this primitive.
+func (*TextArea) Replace ¶
+
+func (t *TextArea) Replace(start, end int, text string) *TextArea
+
+Replace replaces a section of the text with new text. The start and end positions refer to index positions within the entire text string (as a half-open interval). They may be the same, in which case text is inserted at the given position. If the text is an empty string, text between start and end is deleted. Index positions will be shifted to line up with character boundaries. A "changed" event will be triggered.
+
+Previous selections are cleared. The cursor will be located at the end of the replaced text. Scroll offsets will not be changed. A "moved" event will be triggered.
+
+The effects of this function can be undone (and redone) by the user.
+func (*TextArea) Select ¶
+
+func (t *TextArea) Select(start, end int) *TextArea
+
+Select selects a section of the text. The start and end positions refer to index positions within the entire text string (as a half-open interval). They may be the same, in which case the cursor is placed at the given position. Any previous selection is removed. Scroll offsets will be preserved.
+
+Index positions will be shifted to line up with character boundaries.
+func (*TextArea) SetChangedFunc ¶
+
+func (t *TextArea) SetChangedFunc(handler func()) *TextArea
+
+SetChangedFunc sets a handler which is called whenever the text of the text area has changed.
+func (*TextArea) SetClipboard ¶
+
+func (t *TextArea) SetClipboard(copyToClipboard func(string), pasteFromClipboard func() string) *TextArea
+
+SetClipboard allows you to implement your own clipboard by providing a function that is called when the user wishes to store text in the clipboard (copyToClipboard) and a function that is called when the user wishes to retrieve text from the clipboard (pasteFromClipboard).
+
+Providing nil values will cause the default clipboard implementation to be used.
+func (*TextArea) SetDisabled ¶
+
+func (t *TextArea) SetDisabled(disabled bool) FormItem
+
+SetDisabled sets whether or not the item is disabled / read-only.
+func (*TextArea) SetFinishedFunc ¶
+
+func (t *TextArea) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+
+SetFinishedFunc sets a callback invoked when the user leaves this form item.
+func (*TextArea) SetFormAttributes ¶
+
+func (t *TextArea) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+
+SetFormAttributes sets attributes shared by all form items.
+func (*TextArea) SetLabel ¶
+
+func (t *TextArea) SetLabel(label string) *TextArea
+
+SetLabel sets the text to be displayed before the text area.
+func (*TextArea) SetLabelStyle ¶
+
+func (t *TextArea) SetLabelStyle(style tcell.Style) *TextArea
+
+SetLabelStyle sets the style of the label.
+func (*TextArea) SetLabelWidth ¶
+
+func (t *TextArea) SetLabelWidth(width int) *TextArea
+
+SetLabelWidth sets the screen width of the label. A value of 0 will cause the primitive to use the width of the label string.
+func (*TextArea) SetMaxLength ¶
+
+func (t *TextArea) SetMaxLength(maxLength int) *TextArea
+
+SetMaxLength sets the maximum number of bytes allowed in the text area. A value of 0 means there is no limit. If the text area currently contains more bytes than this, it may violate this constraint.
+func (*TextArea) SetMovedFunc ¶
+
+func (t *TextArea) SetMovedFunc(handler func()) *TextArea
+
+SetMovedFunc sets a handler which is called whenever the cursor position or the text selection has changed.
+func (*TextArea) SetOffset ¶
+
+func (t *TextArea) SetOffset(row, column int) *TextArea
+
+SetOffset sets the text's offset, that is, the number of rows and columns skipped during drawing at the top or on the left, respectively. If wrapping is enabled, the column offset is ignored. These values may get adjusted automatically to ensure that some text is always visible.
+func (*TextArea) SetPlaceholder ¶
+
+func (t *TextArea) SetPlaceholder(placeholder string) *TextArea
+
+SetPlaceholder sets the text to be displayed when the text area is empty.
+func (*TextArea) SetPlaceholderStyle ¶
+
+func (t *TextArea) SetPlaceholderStyle(style tcell.Style) *TextArea
+
+SetPlaceholderStyle sets the style of the placeholder text.
+func (*TextArea) SetSelectedStyle ¶
+
+func (t *TextArea) SetSelectedStyle(style tcell.Style) *TextArea
+
+SetSelectedStyle sets the style of the selected text.
+func (*TextArea) SetSize ¶
+
+func (t *TextArea) SetSize(rows, columns int) *TextArea
+
+SetSize sets the screen size of the input element of the text area. The input element is always located next to the label which is always located in the top left corner. If any of the values are 0 or larger than the available space, the available space will be used.
+func (*TextArea) SetText ¶
+
+func (t *TextArea) SetText(text string, cursorAtTheEnd bool) *TextArea
+
+SetText sets the text of the text area. All existing text is deleted and replaced with the new text. Any edits are discarded, no undos are available. This function is typically only used to initialize the text area with a text after it has been created. To clear the text area's text (again, no undos), provide an empty string.
+
+If cursorAtTheEnd is false, the cursor is placed at the start of the text. If it is true, it is placed at the end of the text. For very long texts, placing the cursor at the end can be an expensive operation because the entire text needs to be parsed and laid out.
+
+If you want to set text and preserve undo functionality, use TextArea.Replace instead.
+func (*TextArea) SetTextStyle ¶
+
+func (t *TextArea) SetTextStyle(style tcell.Style) *TextArea
+
+SetTextStyle sets the style of the text.
+func (*TextArea) SetWordWrap ¶
+
+func (t *TextArea) SetWordWrap(wrapOnWords bool) *TextArea
+
+SetWordWrap sets the flag that causes lines that are longer than the available width to be wrapped onto the next line at spaces or after punctuation marks (according to Unicode Standard Annex #14). This flag is ignored if the flag set with TextArea.SetWrap is false. The text area's default is word-wrapping.
+func (*TextArea) SetWrap ¶
+
+func (t *TextArea) SetWrap(wrap bool) *TextArea
+
+SetWrap sets the flag that, if true, leads to lines that are longer than the available width being wrapped onto the next line. If false, any characters beyond the available width are not displayed.
+type TextView ¶
+
+type TextView struct {
+	sync.Mutex
+	*Box
+	// contains filtered or unexported fields
+}
+
+    Navigation
+    Styles / Colors
+    Regions and Highlights
+    Large Texts
+
+TextView is a component to display read-only text. While the text to be displayed can be changed or appended to, there is no functionality that allows the user to edit it. For that, TextArea should be used.
+
+TextView implements the io.Writer interface so you can stream text to it, appending to the existing text. This does not trigger a redraw automatically but if a handler is installed via TextView.SetChangedFunc, you can cause it to be redrawn. (See TextView.SetChangedFunc for more details.)
+
+Tab characters advance the text to the next tab stop at every TabSize screen columns, but only if the text is left-aligned. If the text is centered or right-aligned, tab characters are simply replaced with TabSize spaces.
+
+Word wrapping is enabled by default. Use TextView.SetWrap and TextView.SetWordWrap to change this.
+Navigation
+¶
+
+If the text view is set to be scrollable (which is the default), text is kept in a buffer which may be larger than the screen and can be navigated with Vim-like key binds:
+
+    h, left arrow: Move left.
+    l, right arrow: Move right.
+    j, down arrow: Move down.
+    k, up arrow: Move up.
+    g, home: Move to the top.
+    G, end: Move to the bottom.
+    Ctrl-F, page down: Move down by one page.
+    Ctrl-B, page up: Move up by one page.
+
+If the text is not scrollable, any text above the top visible line is discarded. This can be useful when you want to continuously stream text to the text view and only keep the latest lines.
+
+Use Box.SetInputCapture to override or modify keyboard input.
+Styles / Colors
+¶
+
+If dynamic colors are enabled via TextView.SetDynamicColors, text style can be changed dynamically by embedding color strings in square brackets. This works the same way as anywhere else. See the package documentation for more information.
+Regions and Highlights
+¶
+
+If regions are enabled via TextView.SetRegions, you can define text regions within the text and assign region IDs to them. Text regions start with region tags. Region tags are square brackets that contain a region ID in double quotes, for example:
+
+We define a ["rg"]region[""] here.
+
+A text region ends with the next region tag. Tags with no region ID ([""]) don't start new regions. They can therefore be used to mark the end of a region. Region IDs must satisfy the following regular expression:
+
+[a-zA-Z0-9_,;: \-\.]+
+
+Regions can be highlighted by calling the TextView.Highlight function with one or more region IDs. This can be used to display search results, for example.
+
+The TextView.ScrollToHighlight function can be used to jump to the currently highlighted region once when the text view is drawn the next time.
+Large Texts
+¶
+
+The text view can handle reasonably large texts. It will parse the text as needed. For optimal performance, it is best to access or display parts of the text very far down only if really needed. For example, call TextView.ScrollToBeginning before adding the text to the text view, to avoid scrolling the text all the way to the bottom, forcing a full-text parse.
+
+For even larger texts or "infinite" streams of text such as log files, you should consider using TextView.SetMaxLines to limit the number of lines in the text view buffer. Or disable the text view's scrollability altogether (using TextView.SetScrollable). This will cause the text view to discard lines moving out of the visible area at the top.
+
+See https://github.com/rivo/tview/wiki/TextView for an example.
+func NewTextView ¶
+
+func NewTextView() *TextView
+
+NewTextView returns a new text view.
+func (*TextView) BatchWriter ¶
+
+func (t *TextView) BatchWriter() TextViewWriter
+
+BatchWriter returns a new writer that can be used to write into the buffer but without Locking/Unlocking the buffer on every write, as TextView.Write and TextView.Clear do. The lock will be acquired once when BatchWriter is called, and will be released when the returned writer is closed. Example:
+
+tv := tview.NewTextView()
+w := tv.BatchWriter()
+defer w.Close()
+w.Clear()
+fmt.Fprintln(w, "To sit in solemn silence")
+fmt.Fprintln(w, "on a dull, dark, dock")
+fmt.Println(tv.GetText(false))
+
+Note that using the batch writer requires you to manage any issues that may arise from concurrency yourself. See package description for details on dealing with concurrency.
+func (*TextView) Clear ¶
+
+func (t *TextView) Clear() *TextView
+
+Clear removes all text from the buffer. This triggers the "changed" callback.
+func (*TextView) Draw ¶
+
+func (t *TextView) Draw(screen tcell.Screen)
+
+Draw draws this primitive onto the screen.
+func (*TextView) Focus ¶
+
+func (t *TextView) Focus(delegate func(p Primitive))
+
+Focus is called when this primitive receives focus.
+func (*TextView) GetFieldHeight ¶
+
+func (t *TextView) GetFieldHeight() int
+
+GetFieldHeight returns this primitive's field height.
+func (*TextView) GetFieldWidth ¶
+
+func (t *TextView) GetFieldWidth() int
+
+GetFieldWidth returns this primitive's field width.
+func (*TextView) GetHighlights ¶
+
+func (t *TextView) GetHighlights() (regionIDs []string)
+
+GetHighlights returns the IDs of all currently highlighted regions.
+func (*TextView) GetLabel ¶
+
+func (t *TextView) GetLabel() string
+
+GetLabel returns the text to be displayed before the text view.
+func (*TextView) GetOriginalLineCount ¶
+
+func (t *TextView) GetOriginalLineCount() int
+
+GetOriginalLineCount returns the number of lines in the original text buffer, without applying any wrapping. This is an expensive call as it needs to iterate over the entire text.
+func (*TextView) GetRegionText ¶
+
+func (t *TextView) GetRegionText(regionID string) string
+
+GetRegionText returns the text of the first region with the given ID. If dynamic colors are enabled, style tags are stripped from the text.
+
+If the region does not exist or if regions are turned off, an empty string is returned.
+
+This function can be expensive if the specified region is way beyond the visible area of the text view as the text needs to be parsed until the region can be found, or if the region does not contain any text.
+func (*TextView) GetScrollOffset ¶
+
+func (t *TextView) GetScrollOffset() (row, column int)
+
+GetScrollOffset returns the number of rows and columns that are skipped at the top left corner when the text view has been scrolled.
+func (*TextView) GetText ¶
+
+func (t *TextView) GetText(stripAllTags bool) string
+
+GetText returns the current text of this text view. If "stripAllTags" is set to true, any region/style tags are stripped from the text.
+func (*TextView) HasFocus ¶
+
+func (t *TextView) HasFocus() bool
+
+HasFocus returns whether or not this primitive has focus.
+func (*TextView) Highlight ¶
+
+func (t *TextView) Highlight(regionIDs ...string) *TextView
+
+Highlight specifies which regions should be highlighted. If highlight toggling is set to true (see TextView.SetToggleHighlights), the highlight of the provided regions is toggled (i.e. highlighted regions are un-highlighted and vice versa). If toggling is set to false, the provided regions are highlighted and all other regions will not be highlighted (you may also provide nil to turn off all highlights).
+
+For more information on regions, see class description. Empty region strings are ignored.
+
+Text in highlighted regions will be drawn inverted, i.e. with their background and foreground colors swapped.
+
+If toggling is set to false, clicking outside of any region will remove all highlights.
+
+This function is expensive if a specified region is in a part of the text that has not yet been parsed.
+func (*TextView) InputHandler ¶
+
+func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+
+InputHandler returns the handler for this primitive.
+func (*TextView) MouseHandler ¶
+
+func (t *TextView) MouseHandler() func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
+
+MouseHandler returns the mouse handler for this primitive.
+func (*TextView) ScrollTo ¶
+
+func (t *TextView) ScrollTo(row, column int) *TextView
+
+ScrollTo scrolls to the specified row and column (both starting with 0).
+func (*TextView) ScrollToBeginning ¶
+
+func (t *TextView) ScrollToBeginning() *TextView
+
+ScrollToBeginning scrolls to the top left corner of the text if the text view is scrollable.
+func (*TextView) ScrollToEnd ¶
+
+func (t *TextView) ScrollToEnd() *TextView
+
+ScrollToEnd scrolls to the bottom left corner of the text if the text view is scrollable. Adding new rows to the end of the text view will cause it to scroll with the new data.
+func (*TextView) ScrollToHighlight ¶
+
+func (t *TextView) ScrollToHighlight() *TextView
+
+ScrollToHighlight will cause the visible area to be scrolled so that the highlighted regions appear in the visible area of the text view. This repositioning happens the next time the text view is drawn. It happens only once so you will need to call this function repeatedly to always keep highlighted regions in view.
+
+Nothing happens if there are no highlighted regions or if the text view is not scrollable.
+func (*TextView) SetBackgroundColor ¶
+
+func (t *TextView) SetBackgroundColor(color tcell.Color) *Box
+
+SetBackgroundColor overrides its implementation in Box to set the background color of this primitive. For backwards compatibility reasons, it also sets the background color of the main text element.
+func (*TextView) SetChangedFunc ¶
+
+func (t *TextView) SetChangedFunc(handler func()) *TextView
+
+SetChangedFunc sets a handler function which is called when the text of the text view has changed. This is useful when text is written to this io.Writer in a separate goroutine. Doing so does not automatically cause the screen to be refreshed so you may want to use the "changed" handler to redraw the screen.
+
+Note that to avoid race conditions or deadlocks, there are a few rules you should follow:
+
+    You can call Application.Draw from this handler.
+    You can call TextView.HasFocus from this handler.
+    During the execution of this handler, access to any other variables from this primitive or any other primitive must be queued using Application.QueueUpdate.
+
+See package description for details on dealing with concurrency.
+func (*TextView) SetDisabled ¶
+
+func (t *TextView) SetDisabled(disabled bool) FormItem
+
+SetDisabled sets whether or not the item is disabled / read-only.
+func (*TextView) SetDoneFunc ¶
+
+func (t *TextView) SetDoneFunc(handler func(key tcell.Key)) *TextView
+
+SetDoneFunc sets a handler which is called when the user presses on the following keys: Escape, Enter, Tab, Backtab. The key is passed to the handler.
+func (*TextView) SetDynamicColors ¶
+
+func (t *TextView) SetDynamicColors(dynamic bool) *TextView
+
+SetDynamicColors sets the flag that allows the text color to be changed dynamically with style tags. See class description for details.
+func (*TextView) SetFinishedFunc ¶
+
+func (t *TextView) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+
+SetFinishedFunc sets a callback invoked when the user leaves this form item.
+func (*TextView) SetFormAttributes ¶
+
+func (t *TextView) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+
+SetFormAttributes sets attributes shared by all form items.
+func (*TextView) SetHighlightedFunc ¶
+
+func (t *TextView) SetHighlightedFunc(handler func(added, removed, remaining []string)) *TextView
+
+SetHighlightedFunc sets a handler which is called when the list of currently highlighted regions change. It receives a list of region IDs which were newly highlighted, those that are not highlighted anymore, and those that remain highlighted.
+
+Note that because regions are only determined when drawing the text view, this function can only fire for regions that have existed when the text view was last drawn.
+func (*TextView) SetLabel ¶
+
+func (t *TextView) SetLabel(label string) *TextView
+
+SetLabel sets the text to be displayed before the text view.
+func (*TextView) SetLabelWidth ¶
+
+func (t *TextView) SetLabelWidth(width int) *TextView
+
+SetLabelWidth sets the screen width of the label. A value of 0 will cause the primitive to use the width of the label string.
+func (*TextView) SetMaxLines ¶
+
+func (t *TextView) SetMaxLines(maxLines int) *TextView
+
+SetMaxLines sets the maximum number of lines for this text view. Lines at the beginning of the text will be discarded when the text view is drawn, so as to remain below this value. Only lines above the first visible line are removed.
+
+Broken-over lines via word/character wrapping are counted individually.
+
+Note that TextView.GetText will return the shortened text.
+
+A value of 0 (the default) will keep all lines in place.
+func (*TextView) SetRegions ¶
+
+func (t *TextView) SetRegions(regions bool) *TextView
+
+SetRegions sets the flag that allows to define regions in the text. See class description for details.
+func (*TextView) SetScrollable ¶
+
+func (t *TextView) SetScrollable(scrollable bool) *TextView
+
+SetScrollable sets the flag that decides whether or not the text view is scrollable. If false, text that moves above the text view's top row will be permanently deleted.
+func (*TextView) SetSize ¶
+
+func (t *TextView) SetSize(rows, columns int) *TextView
+
+SetSize sets the screen size of the main text element of the text view. This element is always located next to the label which is always located in the top left corner. If any of the values are 0 or larger than the available space, the available space will be used.
+func (*TextView) SetText ¶
+
+func (t *TextView) SetText(text string) *TextView
+
+SetText sets the text of this text view to the provided string. Previously contained text will be removed. As with writing to the text view io.Writer interface directly, this does not trigger an automatic redraw but it will trigger the "changed" callback if one is set.
+func (*TextView) SetTextAlign ¶
+
+func (t *TextView) SetTextAlign(align int) *TextView
+
+SetTextAlign sets the text alignment within the text view. This must be either AlignLeft, AlignCenter, or AlignRight.
+func (*TextView) SetTextColor ¶
+
+func (t *TextView) SetTextColor(color tcell.Color) *TextView
+
+SetTextColor sets the initial color of the text.
+func (*TextView) SetTextStyle ¶
+
+func (t *TextView) SetTextStyle(style tcell.Style) *TextView
+
+SetTextStyle sets the initial style of the text. This style's background color also determines the background color of the main text element.
+func (*TextView) SetToggleHighlights ¶
+
+func (t *TextView) SetToggleHighlights(toggle bool) *TextView
+
+SetToggleHighlights sets a flag to determine how regions are highlighted. When set to true, the TextView.Highlight function (or a mouse click) will toggle the provided/selected regions. When set to false, TextView.Highlight (or a mouse click) will simply highlight the provided regions.
+func (*TextView) SetWordWrap ¶
+
+func (t *TextView) SetWordWrap(wrapOnWords bool) *TextView
+
+SetWordWrap sets the flag that, if true and if the "wrap" flag is also true (see TextView.SetWrap), wraps according to [Unicode Standard Annex #14].
+
+This flag is ignored if the "wrap" flag is false.
+func (*TextView) SetWrap ¶
+
+func (t *TextView) SetWrap(wrap bool) *TextView
+
+SetWrap sets the flag that, if true, leads to lines that are longer than the available width being wrapped onto the next line. If false, any characters beyond the available width are not displayed.
+func (*TextView) Write ¶
+
+func (t *TextView) Write(p []byte) (n int, err error)
+
+Write lets us implement the io.Writer interface.
+type TextViewWriter ¶
+
+type TextViewWriter struct {
+	// contains filtered or unexported fields
+}
+
+TextViewWriter is a writer that can be used to write to and clear a TextView in batches, i.e. multiple writes with the lock only being acquired once. Don't instantiated this class directly but use the TextView's BatchWriter method instead.
+func (TextViewWriter) Clear ¶
+
+func (w TextViewWriter) Clear()
+
+Clear removes all text from the buffer.
+func (TextViewWriter) Close ¶
+
+func (w TextViewWriter) Close() error
+
+Close implements io.Closer for the writer by unlocking the original TextView.
+func (TextViewWriter) HasFocus ¶
+
+func (w TextViewWriter) HasFocus() bool
+
+HasFocus returns whether the underlying TextView has focus.
+func (TextViewWriter) Write ¶
+
+func (w TextViewWriter) Write(p []byte) (n int, err error)
+
+Write implements the io.Writer interface. It behaves like the TextView's Write() method except that it does not acquire the lock.
+type Theme ¶
+
+type Theme struct {
+	PrimitiveBackgroundColor    tcell.Color // Main background color for primitives.
+	ContrastBackgroundColor     tcell.Color // Background color for contrasting elements.
+	MoreContrastBackgroundColor tcell.Color // Background color for even more contrasting elements.
+	BorderColor                 tcell.Color // Box borders.
+	TitleColor                  tcell.Color // Box titles.
+	GraphicsColor               tcell.Color // Graphics.
+	PrimaryTextColor            tcell.Color // Primary text.
+	SecondaryTextColor          tcell.Color // Secondary text (e.g. labels).
+	TertiaryTextColor           tcell.Color // Tertiary text (e.g. subtitles, notes).
+	InverseTextColor            tcell.Color // Text on primary-colored backgrounds.
+	ContrastSecondaryTextColor  tcell.Color // Secondary text on ContrastBackgroundColor-colored backgrounds.
+}
+
+Theme defines the colors used when primitives are initialized.
+type TreeNode ¶
+
+type TreeNode struct {
+	// contains filtered or unexported fields
+}
+
+TreeNode represents one node in a tree view.
+func NewTreeNode ¶
+
+func NewTreeNode(text string) *TreeNode
+
+NewTreeNode returns a new tree node.
+func (*TreeNode) AddChild ¶
+
+func (n *TreeNode) AddChild(node *TreeNode) *TreeNode
+
+AddChild adds a new child node to this node.
+func (*TreeNode) ClearChildren ¶
+
+func (n *TreeNode) ClearChildren() *TreeNode
+
+ClearChildren removes all child nodes from this node.
+func (*TreeNode) Collapse ¶
+
+func (n *TreeNode) Collapse() *TreeNode
+
+Collapse makes the child nodes of this node disappear.
+func (*TreeNode) CollapseAll ¶
+
+func (n *TreeNode) CollapseAll() *TreeNode
+
+CollapseAll collapses this node and all descendent nodes.
+func (*TreeNode) Expand ¶
+
+func (n *TreeNode) Expand() *TreeNode
+
+Expand makes the child nodes of this node appear.
+func (*TreeNode) ExpandAll ¶
+
+func (n *TreeNode) ExpandAll() *TreeNode
+
+ExpandAll expands this node and all descendent nodes.
+func (*TreeNode) GetChildren ¶
+
+func (n *TreeNode) GetChildren() []*TreeNode
+
+GetChildren returns this node's children.
+func (*TreeNode) GetColor ¶
+
+func (n *TreeNode) GetColor() tcell.Color
+
+GetColor returns the node's color.
+func (*TreeNode) GetLevel ¶
+
+func (n *TreeNode) GetLevel() int
+
+GetLevel returns the node's level within the hierarchy, where 0 corresponds to the root node, 1 corresponds to its children, and so on. This is only guaranteed to be up to date immediately after the tree that contains this node is drawn.
+func (*TreeNode) GetReference ¶
+
+func (n *TreeNode) GetReference() interface{}
+
+GetReference returns this node's reference object.
+func (*TreeNode) GetText ¶
+
+func (n *TreeNode) GetText() string
+
+GetText returns this node's text.
+func (*TreeNode) IsExpanded ¶
+
+func (n *TreeNode) IsExpanded() bool
+
+IsExpanded returns whether the child nodes of this node are visible.
+func (*TreeNode) RemoveChild ¶
+
+func (n *TreeNode) RemoveChild(node *TreeNode) *TreeNode
+
+RemoveChild removes a child node from this node. If the child node cannot be found, nothing happens.
+func (*TreeNode) SetChildren ¶
+
+func (n *TreeNode) SetChildren(childNodes []*TreeNode) *TreeNode
+
+SetChildren sets this node's child nodes.
+func (*TreeNode) SetColor ¶
+
+func (n *TreeNode) SetColor(color tcell.Color) *TreeNode
+
+SetColor sets the node's text color.
+func (*TreeNode) SetExpanded ¶
+
+func (n *TreeNode) SetExpanded(expanded bool) *TreeNode
+
+SetExpanded sets whether or not this node's child nodes should be displayed.
+func (*TreeNode) SetIndent ¶
+
+func (n *TreeNode) SetIndent(indent int) *TreeNode
+
+SetIndent sets an additional indentation for this node's text. A value of 0 keeps the text as far left as possible with a minimum of line graphics. Any value greater than that moves the text to the right.
+func (*TreeNode) SetReference ¶
+
+func (n *TreeNode) SetReference(reference interface{}) *TreeNode
+
+SetReference allows you to store a reference of any type in this node. This will allow you to establish a mapping between the TreeView hierarchy and your internal tree structure.
+func (*TreeNode) SetSelectable ¶
+
+func (n *TreeNode) SetSelectable(selectable bool) *TreeNode
+
+SetSelectable sets a flag indicating whether this node can be selected by the user.
+func (*TreeNode) SetSelectedFunc ¶
+
+func (n *TreeNode) SetSelectedFunc(handler func()) *TreeNode
+
+SetSelectedFunc sets a function which is called when the user selects this node by hitting Enter when it is selected.
+func (*TreeNode) SetText ¶
+
+func (n *TreeNode) SetText(text string) *TreeNode
+
+SetText sets the node's text which is displayed.
+func (*TreeNode) Walk ¶
+
+func (n *TreeNode) Walk(callback func(node, parent *TreeNode) bool) *TreeNode
+
+Walk traverses this node's subtree in depth-first, pre-order (NLR) order and calls the provided callback function on each traversed node (which includes this node) with the traversed node and its parent node (nil for this node). The callback returns whether traversal should continue with the traversed node's child nodes (true) or not recurse any deeper (false).
+type TreeView ¶
+
+type TreeView struct {
+	*Box
+	// contains filtered or unexported fields
+}
+
+TreeView displays tree structures. A tree consists of nodes (TreeNode objects) where each node has zero or more child nodes and exactly one parent node (except for the root node which has no parent node).
+
+The SetRoot() function is used to specify the root of the tree. Other nodes are added locally to the root node or any of its descendents. See the TreeNode documentation for details on node attributes. (You can use SetReference() to store a reference to nodes of your own tree structure.)
+
+Nodes can be selected by calling SetCurrentNode(). The user can navigate the selection or the tree by using the following keys:
+
+    j, down arrow, right arrow: Move (the selection) down by one node.
+    k, up arrow, left arrow: Move (the selection) up by one node.
+    g, home: Move (the selection) to the top.
+    G, end: Move (the selection) to the bottom.
+    J: Move (the selection) up one level (if that node is selectable).
+    K: Move (the selection) to the last node one level down (if any).
+    Ctrl-F, page down: Move (the selection) down by one page.
+    Ctrl-B, page up: Move (the selection) up by one page.
+
+Selected nodes can trigger the "selected" callback when the user hits Enter.
+
+The root node corresponds to level 0, its children correspond to level 1, their children to level 2, and so on. Per default, the first level that is displayed is 0, i.e. the root node. You can call SetTopLevel() to hide levels.
+
+If graphics are turned on (see SetGraphics()), lines indicate the tree's hierarchy. Alternative (or additionally), you can set different prefixes using SetPrefixes() for different levels, for example to display hierarchical bullet point lists.
+
+See https://github.com/rivo/tview/wiki/TreeView for an example.
+func NewTreeView ¶
+
+func NewTreeView() *TreeView
+
+NewTreeView returns a new tree view.
+func (*TreeView) Draw ¶
+
+func (t *TreeView) Draw(screen tcell.Screen)
+
+Draw draws this primitive onto the screen.
+func (*TreeView) GetCurrentNode ¶
+
+func (t *TreeView) GetCurrentNode() *TreeNode
+
+GetCurrentNode returns the currently selected node or nil of no node is currently selected.
+func (*TreeView) GetPath ¶
+
+func (t *TreeView) GetPath(node *TreeNode) []*TreeNode
+
+GetPath returns all nodes located on the path from the root to the given node, including the root and the node itself. If there is no root node, nil is returned. If there are multiple paths to the node, a random one is chosen and returned.
+func (*TreeView) GetRoot ¶
+
+func (t *TreeView) GetRoot() *TreeNode
+
+GetRoot returns the root node of the tree. If no such node was previously set, nil is returned.
+func (*TreeView) GetRowCount ¶
+
+func (t *TreeView) GetRowCount() int
+
+GetRowCount returns the number of "visible" nodes. This includes nodes which fall outside the tree view's box but notably does not include the children of collapsed nodes. Note that this value is only up to date after the tree view has been drawn.
+func (*TreeView) GetScrollOffset ¶
+
+func (t *TreeView) GetScrollOffset() int
+
+GetScrollOffset returns the number of node rows that were skipped at the top of the tree view. Note that when the user navigates the tree view, this value is only updated after the tree view has been redrawn.
+func (*TreeView) InputHandler ¶
+
+func (t *TreeView) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+
+InputHandler returns the handler for this primitive.
+func (*TreeView) MouseHandler ¶
+
+func (t *TreeView) MouseHandler() func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
+
+MouseHandler returns the mouse handler for this primitive.
+func (*TreeView) Move ¶
+
+func (t *TreeView) Move(offset int) *TreeView
+
+Move moves the selection (if a node is currently selected) or scrolls the tree view (if there is no selection), by the given offset (positive values to move/scroll down, negative values to move/scroll up). For selection changes, the offset refers to the number selectable, visible nodes. For scrolling, the offset refers to the number of visible nodes.
+
+If the offset is 0, nothing happens.
+func (*TreeView) SetAlign ¶
+
+func (t *TreeView) SetAlign(align bool) *TreeView
+
+SetAlign controls the horizontal alignment of the node texts. If set to true, all texts except that of top-level nodes will be placed in the same column. If set to false, they will indent with the hierarchy.
+func (*TreeView) SetChangedFunc ¶
+
+func (t *TreeView) SetChangedFunc(handler func(node *TreeNode)) *TreeView
+
+SetChangedFunc sets the function which is called when the currently selected node changes, for example when the user navigates to a new tree node.
+func (*TreeView) SetCurrentNode ¶
+
+func (t *TreeView) SetCurrentNode(node *TreeNode) *TreeView
+
+SetCurrentNode sets the currently selected node. Provide nil to clear all selections. Selected nodes must be visible and selectable, or else the selection will be changed to the top-most selectable and visible node.
+
+This function does NOT trigger the "changed" callback because the actual node that will be selected is not known until the tree is drawn. Triggering the "changed" callback is thus deferred until the next call to TreeView.Draw.
+func (*TreeView) SetDoneFunc ¶
+
+func (t *TreeView) SetDoneFunc(handler func(key tcell.Key)) *TreeView
+
+SetDoneFunc sets a handler which is called whenever the user presses the Escape, Tab, or Backtab key.
+func (*TreeView) SetGraphics ¶
+
+func (t *TreeView) SetGraphics(showGraphics bool) *TreeView
+
+SetGraphics sets a flag which determines whether or not line graphics are drawn to illustrate the tree's hierarchy.
+func (*TreeView) SetGraphicsColor ¶
+
+func (t *TreeView) SetGraphicsColor(color tcell.Color) *TreeView
+
+SetGraphicsColor sets the colors of the lines used to draw the tree structure.
+func (*TreeView) SetPrefixes ¶
+
+func (t *TreeView) SetPrefixes(prefixes []string) *TreeView
+
+SetPrefixes defines the strings drawn before the nodes' texts. This is a slice of strings where each element corresponds to a node's hierarchy level, i.e. 0 for the root, 1 for the root's children, and so on (levels will cycle).
+
+For example, to display a hierarchical list with bullet points:
+
+treeView.SetGraphics(false).
+  SetPrefixes([]string{"* ", "- ", "x "})
+
+Deeper levels will cycle through the prefixes.
+func (*TreeView) SetRoot ¶
+
+func (t *TreeView) SetRoot(root *TreeNode) *TreeView
+
+SetRoot sets the root node of the tree.
+func (*TreeView) SetSelectedFunc ¶
+
+func (t *TreeView) SetSelectedFunc(handler func(node *TreeNode)) *TreeView
+
+SetSelectedFunc sets the function which is called when the user selects a node by pressing Enter on the current selection.
+func (*TreeView) SetTopLevel ¶
+
+func (t *TreeView) SetTopLevel(topLevel int) *TreeView
+
+SetTopLevel sets the first tree level that is visible with 0 referring to the root, 1 to the root's child nodes, and so on. Nodes above the top level are not displayed.

@@ -1,0 +1,776 @@
+Overview ¶
+
+    Widgets
+    Hello World
+    More Demos
+    Styles, Colors, and Hyperlinks
+    Styles
+    Unicode Support
+    Concurrency
+    Type Hierarchy
+
+Package tview implements rich widgets for terminal based user interfaces. The widgets provided with this package are useful for data exploration and data entry.
+Widgets ¶
+
+The package implements the following widgets:
+
+    TextView: A scrollable window that display multi-colored text. Text may also be highlighted.
+    TextArea: An editable multi-line text area.
+    Table: A scrollable display of tabular data. Table cells, rows, or columns may also be highlighted.
+    TreeView: A scrollable display for hierarchical data. Tree nodes can be highlighted, collapsed, expanded, and more.
+    List: A navigable text list with optional keyboard shortcuts.
+    InputField: One-line input fields to enter text.
+    DropDown: Drop-down selection fields.
+    Checkbox: Selectable checkbox for boolean values.
+    Image: Displays images.
+    Button: Buttons which get activated when the user selects them.
+    Form: Forms composed of input fields, drop down selections, checkboxes, and buttons.
+    Modal: A centered window with a text message and one or more buttons.
+    Grid: A grid based layout manager.
+    Flex: A Flexbox based layout manager.
+    Pages: A page based layout manager.
+
+The package also provides Application which is used to poll the event queue and draw widgets on screen.
+Hello World ¶
+
+The following is a very basic example showing a box with the title "Hello, world!":
+
+package main
+
+import (
+	"github.com/rivo/tview"
+)
+
+func main() {
+	box := tview.NewBox().SetBorder(true).SetTitle("Hello, world!")
+	if err := tview.NewApplication().SetRoot(box, true).Run(); err != nil {
+		panic(err)
+	}
+}
+
+First, we create a box primitive with a border and a title. Then we create an application, set the box as its root primitive, and run the event loop. The application exits when the application's Application.Stop function is called or when Ctrl-C is pressed.
+More Demos ¶
+
+You will find more demos in the "demos" subdirectory. It also contains a presentation (written using tview) which gives an overview of the different widgets and how they can be used.
+Styles, Colors, and Hyperlinks ¶
+
+Throughout this package, styles are specified using the tcell.Style type. Styles specify colors with the tcell.Color type. Functions such as tcell.GetColor, tcell.NewHexColor, and tcell.NewRGBColor can be used to create colors from W3C color names or RGB values. The tcell.Style type also allows you to specify text attributes such as "bold" or "underline" or a URL which some terminals use to display hyperlinks.
+
+Almost all strings which are displayed may contain style tags. A style tag's content is always wrapped in square brackets. In its simplest form, a style tag specifies the foreground color of the text. Colors in these tags are W3C color names or six hexadecimal digits following a hash tag. Examples:
+
+This is a [red]warning[white]!
+The sky is [#8080ff]blue[#ffffff].
+
+A style tag changes the style of the characters following that style tag. There is no style stack and no nesting of style tags.
+
+Style tags are used in almost everything from box titles, list text, form item labels, to table cells. In a TextView, this functionality has to be switched on explicitly. See the TextView documentation for more information.
+
+A style tag's full format looks like this:
+
+[<foreground>:<background>:<attribute flags>:<url>]
+
+Each of the four fields can be left blank and trailing fields can be omitted. (Empty square brackets "[]", however, are not considered style tags.) Fields that are not specified will be left unchanged. A field with just a dash ("-") means "reset to default".
+
+You can specify the following flags to turn on certain attributes (some flags may not be supported by your terminal):
+
+l: blink
+b: bold
+i: italic
+d: dim
+r: reverse (switch foreground and background color)
+u: underline
+s: strike-through
+
+Use uppercase letters to turn off the corresponding attribute, for example, "B" to turn off bold. Uppercase letters have no effect if the attribute was not previously set.
+
+Setting a URL allows you to turn a piece of text into a hyperlink in some terminals. Specify a dash ("-") to specify the end of the hyperlink. Hyperlinks must only contain single-byte characters (e.g. ASCII) and they may not contain bracket characters ("[" or "]").
+
+Examples:
+
+[yellow]Yellow text
+[yellow:red]Yellow text on red background
+[:red]Red background, text color unchanged
+[yellow::u]Yellow text underlined
+[::bl]Bold, blinking text
+[::-]Colors unchanged, flags reset
+[-]Reset foreground color
+[::i]Italic and [::I]not italic
+Click [:::https://example.com]here[:::-] for example.com.
+Send an email to [:::mailto:her@example.com]her/[:::mail:him@example.com]him/[:::mail:them@example.com]them[:::-].
+[-:-:-:-]Reset everything
+[:]No effect
+[]Not a valid style tag, will print square brackets as they are
+
+In the rare event that you want to display a string such as "[red]" or "[#00ff1a]" without applying its effect, you need to put an opening square bracket before the closing square bracket. Note that the text inside the brackets will be matched less strictly than region or colors tags. I.e. any character that may be used in color or region tags will be recognized. Examples:
+
+[red[]      will be output as [red]
+["123"[]    will be output as ["123"]
+[#6aff00[[] will be output as [#6aff00[]
+[a#"[[[]    will be output as [a#"[[]
+[]          will be output as [] (see style tags above)
+[[]         will be output as [[] (not an escaped tag)
+
+You can use the Escape() function to insert brackets automatically where needed.
+Styles ¶
+
+When primitives are instantiated, they are initialized with colors taken from the global Styles variable. You may change this variable to adapt the look and feel of the primitives to your preferred style.
+
+Note that most terminals will not report information about their color theme. This package therefore does not support using the terminal's color theme. The default style is a dark theme and you must change the Styles variable to switch to a light (or other) theme.
+Unicode Support ¶
+
+This package supports all unicode characters supported by your terminal.
+Concurrency ¶
+
+Many functions in this package are not thread-safe. For many applications, this is not an issue: If your code makes changes in response to key events, the corresponding callback function will execute in the main goroutine and thus will not cause any race conditions. (Exceptions to this are documented.)
+
+If you access your primitives from other goroutines, however, you will need to synchronize execution. The easiest way to do this is to call Application.QueueUpdate or Application.QueueUpdateDraw (see the function documentation for details):
+
+go func() {
+  app.QueueUpdateDraw(func() {
+    table.SetCellSimple(0, 0, "Foo bar")
+  })
+}()
+
+One exception to this is the io.Writer interface implemented by TextView. You can safely write to a TextView from any goroutine. See the TextView documentation for details.
+
+You can also call Application.Draw from any goroutine without having to wrap it in Application.QueueUpdate. And, as mentioned above, key event callbacks are executed in the main goroutine and thus should not use Application.QueueUpdate as that may lead to deadlocks. It is also not necessary to call Application.Draw from such callbacks as it will be called automatically.
+Type Hierarchy ¶
+
+All widgets listed above contain the Box type. All of Box's functions are therefore available for all widgets, too. Please note that if you are using the functions of Box on a subclass, they will return a *Box, not the subclass. This is a Golang limitation. So while tview supports method chaining in many places, these chains must be broken when using Box's functions. Example:
+
+// This will cause "textArea" to be an empty Box.
+textArea := tview.NewTextArea().
+	SetMaxLength(256).
+	SetPlaceholder("Enter text here").
+	SetBorder(true)
+
+You will need to call Box.SetBorder separately:
+
+textArea := tview.NewTextArea().
+	SetMaxLength(256).
+	SetPlaceholder("Enter text here")
+texArea.SetBorder(true)
+
+All widgets also implement the Primitive interface.
+
+The tview package's rendering is based on version 2 of https://github.com/gdamore/tcell. It uses types and constants from that package (e.g. colors, styles, and keyboard values).
+Index ¶
+
+    Constants
+    Variables
+    func ANSIWriter(writer io.Writer) io.Writer
+    func Escape(text string) string
+    func Print(screen tcell.Screen, text string, x, y, maxWidth, align int, color tcell.Color) (int, int)
+    func PrintJoinedSemigraphics(screen tcell.Screen, x, y int, ch rune, style tcell.Style)
+    func PrintSimple(screen tcell.Screen, text string, x, y int)
+    func TaggedStringWidth(text string) (width int)
+    func TranslateANSI(text string) string
+    func WordWrap(text string, width int) (lines []string)
+    type Application
+        func NewApplication() *Application
+        func (a *Application) Draw() *Application
+        func (a *Application) EnableMouse(enable bool) *Application
+        func (a *Application) ForceDraw() *Application
+        func (a *Application) GetAfterDrawFunc() func(screen tcell.Screen)
+        func (a *Application) GetBeforeDrawFunc() func(screen tcell.Screen) bool
+        func (a *Application) GetFocus() Primitive
+        func (a *Application) GetInputCapture() func(event *tcell.EventKey) *tcell.EventKey
+        func (a *Application) GetMouseCapture() ...
+        func (a *Application) QueueEvent(event tcell.Event) *Application
+        func (a *Application) QueueUpdate(f func()) *Application
+        func (a *Application) QueueUpdateDraw(f func()) *Application
+        func (a *Application) ResizeToFullScreen(p Primitive) *Application
+        func (a *Application) Run() error
+        func (a *Application) SetAfterDrawFunc(handler func(screen tcell.Screen)) *Application
+        func (a *Application) SetBeforeDrawFunc(handler func(screen tcell.Screen) bool) *Application
+        func (a *Application) SetFocus(p Primitive) *Application
+        func (a *Application) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) *Application
+        func (a *Application) SetMouseCapture(...) *Application
+        func (a *Application) SetRoot(root Primitive, fullscreen bool) *Application
+        func (a *Application) SetScreen(screen tcell.Screen) *Application
+        func (a *Application) Stop()
+        func (a *Application) Suspend(f func()) bool
+        func (a *Application) Sync() *Application
+    type Box
+        func NewBox() *Box
+        func (b *Box) Blur()
+        func (b *Box) Draw(screen tcell.Screen)
+        func (b *Box) DrawForSubclass(screen tcell.Screen, p Primitive)
+        func (b *Box) Focus(delegate func(p Primitive))
+        func (b *Box) GetBackgroundColor() tcell.Color
+        func (b *Box) GetBorderAttributes() tcell.AttrMask
+        func (b *Box) GetBorderColor() tcell.Color
+        func (b *Box) GetDrawFunc() func(screen tcell.Screen, x, y, width, height int) (int, int, int, int)
+        func (b *Box) GetInnerRect() (int, int, int, int)
+        func (b *Box) GetInputCapture() func(event *tcell.EventKey) *tcell.EventKey
+        func (b *Box) GetMouseCapture() ...
+        func (b *Box) GetRect() (int, int, int, int)
+        func (b *Box) GetTitle() string
+        func (b *Box) HasFocus() bool
+        func (b *Box) InRect(x, y int) bool
+        func (b *Box) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (b *Box) MouseHandler() ...
+        func (b *Box) SetBackgroundColor(color tcell.Color) *Box
+        func (b *Box) SetBlurFunc(callback func()) *Box
+        func (b *Box) SetBorder(show bool) *Box
+        func (b *Box) SetBorderAttributes(attr tcell.AttrMask) *Box
+        func (b *Box) SetBorderColor(color tcell.Color) *Box
+        func (b *Box) SetBorderPadding(top, bottom, left, right int) *Box
+        func (b *Box) SetBorderStyle(style tcell.Style) *Box
+        func (b *Box) SetDrawFunc(...) *Box
+        func (b *Box) SetFocusFunc(callback func()) *Box
+        func (b *Box) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) *Box
+        func (b *Box) SetMouseCapture(...) *Box
+        func (b *Box) SetRect(x, y, width, height int)
+        func (b *Box) SetTitle(title string) *Box
+        func (b *Box) SetTitleAlign(align int) *Box
+        func (b *Box) SetTitleColor(color tcell.Color) *Box
+        func (b *Box) WrapInputHandler(inputHandler func(*tcell.EventKey, func(p Primitive))) func(*tcell.EventKey, func(p Primitive))
+        func (b *Box) WrapMouseHandler(...) ...
+    type Button
+        func NewButton(label string) *Button
+        func (b *Button) Draw(screen tcell.Screen)
+        func (b *Button) GetLabel() string
+        func (b *Button) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (b *Button) IsDisabled() bool
+        func (b *Button) MouseHandler() ...
+        func (b *Button) SetActivatedStyle(style tcell.Style) *Button
+        func (b *Button) SetBackgroundColorActivated(color tcell.Color) *Button
+        func (b *Button) SetDisabled(disabled bool) *Button
+        func (b *Button) SetDisabledStyle(style tcell.Style) *Button
+        func (b *Button) SetExitFunc(handler func(key tcell.Key)) *Button
+        func (b *Button) SetLabel(label string) *Button
+        func (b *Button) SetLabelColor(color tcell.Color) *Button
+        func (b *Button) SetLabelColorActivated(color tcell.Color) *Button
+        func (b *Button) SetSelectedFunc(handler func()) *Button
+        func (b *Button) SetStyle(style tcell.Style) *Button
+    type Checkbox
+        func NewCheckbox() *Checkbox
+        func (c *Checkbox) Draw(screen tcell.Screen)
+        func (c *Checkbox) Focus(delegate func(p Primitive))
+        func (c *Checkbox) GetFieldHeight() int
+        func (c *Checkbox) GetFieldWidth() int
+        func (c *Checkbox) GetLabel() string
+        func (c *Checkbox) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (c *Checkbox) IsChecked() bool
+        func (c *Checkbox) MouseHandler() ...
+        func (c *Checkbox) SetChangedFunc(handler func(checked bool)) *Checkbox
+        func (c *Checkbox) SetChecked(checked bool) *Checkbox
+        func (c *Checkbox) SetCheckedString(checked string) *Checkbox
+        func (c *Checkbox) SetDisabled(disabled bool) FormItem
+        func (c *Checkbox) SetDoneFunc(handler func(key tcell.Key)) *Checkbox
+        func (c *Checkbox) SetFieldBackgroundColor(color tcell.Color) *Checkbox
+        func (c *Checkbox) SetFieldTextColor(color tcell.Color) *Checkbox
+        func (c *Checkbox) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+        func (c *Checkbox) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+        func (c *Checkbox) SetLabel(label string) *Checkbox
+        func (c *Checkbox) SetLabelColor(color tcell.Color) *Checkbox
+        func (c *Checkbox) SetLabelWidth(width int) *Checkbox
+    type DropDown
+        func NewDropDown() *DropDown
+        func (d *DropDown) AddOption(text string, selected func()) *DropDown
+        func (d *DropDown) Draw(screen tcell.Screen)
+        func (d *DropDown) Focus(delegate func(p Primitive))
+        func (d *DropDown) GetCurrentOption() (int, string)
+        func (d *DropDown) GetFieldHeight() int
+        func (d *DropDown) GetFieldWidth() int
+        func (d *DropDown) GetLabel() string
+        func (d *DropDown) GetOptionCount() int
+        func (d *DropDown) HasFocus() bool
+        func (d *DropDown) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (d *DropDown) IsOpen() bool
+        func (d *DropDown) MouseHandler() ...
+        func (d *DropDown) RemoveOption(index int) *DropDown
+        func (d *DropDown) SetCurrentOption(index int) *DropDown
+        func (d *DropDown) SetDisabled(disabled bool) FormItem
+        func (d *DropDown) SetDoneFunc(handler func(key tcell.Key)) *DropDown
+        func (d *DropDown) SetFieldBackgroundColor(color tcell.Color) *DropDown
+        func (d *DropDown) SetFieldTextColor(color tcell.Color) *DropDown
+        func (d *DropDown) SetFieldWidth(width int) *DropDown
+        func (d *DropDown) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+        func (d *DropDown) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+        func (d *DropDown) SetLabel(label string) *DropDown
+        func (d *DropDown) SetLabelColor(color tcell.Color) *DropDown
+        func (d *DropDown) SetLabelWidth(width int) *DropDown
+        func (d *DropDown) SetListStyles(unselected, selected tcell.Style) *DropDown
+        func (d *DropDown) SetOptions(texts []string, selected func(text string, index int)) *DropDown
+        func (d *DropDown) SetPrefixTextColor(color tcell.Color) *DropDown
+        func (d *DropDown) SetSelectedFunc(handler func(text string, index int)) *DropDown
+        func (d *DropDown) SetTextOptions(prefix, suffix, currentPrefix, currentSuffix, noSelection string) *DropDown
+    type Flex
+        func NewFlex() *Flex
+        func (f *Flex) AddItem(item Primitive, fixedSize, proportion int, focus bool) *Flex
+        func (f *Flex) Clear() *Flex
+        func (f *Flex) Draw(screen tcell.Screen)
+        func (f *Flex) Focus(delegate func(p Primitive))
+        func (f *Flex) GetItem(index int) Primitive
+        func (f *Flex) GetItemCount() int
+        func (f *Flex) HasFocus() bool
+        func (f *Flex) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (f *Flex) MouseHandler() ...
+        func (f *Flex) RemoveItem(p Primitive) *Flex
+        func (f *Flex) ResizeItem(p Primitive, fixedSize, proportion int) *Flex
+        func (f *Flex) SetDirection(direction int) *Flex
+        func (f *Flex) SetFullScreen(fullScreen bool) *Flex
+    type Form
+        func NewForm() *Form
+        func (f *Form) AddButton(label string, selected func()) *Form
+        func (f *Form) AddCheckbox(label string, checked bool, changed func(checked bool)) *Form
+        func (f *Form) AddDropDown(label string, options []string, initialOption int, ...) *Form
+        func (f *Form) AddFormItem(item FormItem) *Form
+        func (f *Form) AddImage(label string, image image.Image, width, height, colors int) *Form
+        func (f *Form) AddInputField(label, value string, fieldWidth int, ...) *Form
+        func (f *Form) AddPasswordField(label, value string, fieldWidth int, mask rune, changed func(text string)) *Form
+        func (f *Form) AddTextArea(label, text string, fieldWidth, fieldHeight, maxLength int, ...) *Form
+        func (f *Form) AddTextView(label, text string, fieldWidth, fieldHeight int, ...) *Form
+        func (f *Form) Clear(includeButtons bool) *Form
+        func (f *Form) ClearButtons() *Form
+        func (f *Form) Draw(screen tcell.Screen)
+        func (f *Form) Focus(delegate func(p Primitive))
+        func (f *Form) GetButton(index int) *Button
+        func (f *Form) GetButtonCount() int
+        func (f *Form) GetButtonIndex(label string) int
+        func (f *Form) GetFocusedItemIndex() (formItem, button int)
+        func (f *Form) GetFormItem(index int) FormItem
+        func (f *Form) GetFormItemByLabel(label string) FormItem
+        func (f *Form) GetFormItemCount() int
+        func (f *Form) GetFormItemIndex(label string) int
+        func (f *Form) HasFocus() bool
+        func (f *Form) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (f *Form) MouseHandler() ...
+        func (f *Form) RemoveButton(index int) *Form
+        func (f *Form) RemoveFormItem(index int) *Form
+        func (f *Form) SetButtonActivatedStyle(style tcell.Style) *Form
+        func (f *Form) SetButtonBackgroundColor(color tcell.Color) *Form
+        func (f *Form) SetButtonDisabledStyle(style tcell.Style) *Form
+        func (f *Form) SetButtonStyle(style tcell.Style) *Form
+        func (f *Form) SetButtonTextColor(color tcell.Color) *Form
+        func (f *Form) SetButtonsAlign(align int) *Form
+        func (f *Form) SetCancelFunc(callback func()) *Form
+        func (f *Form) SetFieldBackgroundColor(color tcell.Color) *Form
+        func (f *Form) SetFieldTextColor(color tcell.Color) *Form
+        func (f *Form) SetFocus(index int) *Form
+        func (f *Form) SetHorizontal(horizontal bool) *Form
+        func (f *Form) SetItemPadding(padding int) *Form
+        func (f *Form) SetLabelColor(color tcell.Color) *Form
+    type FormItem
+    type Frame
+        func NewFrame(primitive Primitive) *Frame
+        func (f *Frame) AddText(text string, header bool, align int, color tcell.Color) *Frame
+        func (f *Frame) Clear() *Frame
+        func (f *Frame) Draw(screen tcell.Screen)
+        func (f *Frame) Focus(delegate func(p Primitive))
+        func (f *Frame) GetPrimitive() Primitive
+        func (f *Frame) HasFocus() bool
+        func (f *Frame) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (f *Frame) MouseHandler() ...
+        func (f *Frame) SetBorders(top, bottom, header, footer, left, right int) *Frame
+        func (f *Frame) SetPrimitive(p Primitive) *Frame
+    type Grid
+        func NewGrid() *Grid
+        func (g *Grid) AddItem(p Primitive, row, column, rowSpan, colSpan, minGridHeight, minGridWidth int, ...) *Grid
+        func (g *Grid) Clear() *Grid
+        func (g *Grid) Draw(screen tcell.Screen)
+        func (g *Grid) Focus(delegate func(p Primitive))
+        func (g *Grid) GetOffset() (rows, columns int)
+        func (g *Grid) HasFocus() bool
+        func (g *Grid) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (g *Grid) MouseHandler() ...
+        func (g *Grid) RemoveItem(p Primitive) *Grid
+        func (g *Grid) SetBorders(borders bool) *Grid
+        func (g *Grid) SetBordersColor(color tcell.Color) *Grid
+        func (g *Grid) SetColumns(columns ...int) *Grid
+        func (g *Grid) SetGap(row, column int) *Grid
+        func (g *Grid) SetMinSize(row, column int) *Grid
+        func (g *Grid) SetOffset(rows, columns int) *Grid
+        func (g *Grid) SetRows(rows ...int) *Grid
+        func (g *Grid) SetSize(numRows, numColumns, rowSize, columnSize int) *Grid
+    type Image
+        func NewImage() *Image
+        func (i *Image) Draw(screen tcell.Screen)
+        func (i *Image) Focus(delegate func(p Primitive))
+        func (i *Image) GetColors() int
+        func (i *Image) GetFieldHeight() int
+        func (i *Image) GetFieldWidth() int
+        func (i *Image) GetLabel() string
+        func (i *Image) GetLabelStyle() tcell.Style
+        func (i *Image) SetAlign(vertical, horizontal int) *Image
+        func (i *Image) SetAspectRatio(aspectRatio float64) *Image
+        func (i *Image) SetColors(colors int) *Image
+        func (i *Image) SetDisabled(disabled bool) FormItem
+        func (i *Image) SetDithering(dithering int) *Image
+        func (i *Image) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+        func (i *Image) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+        func (i *Image) SetImage(image image.Image) *Image
+        func (i *Image) SetLabel(label string) *Image
+        func (i *Image) SetLabelStyle(style tcell.Style) *Image
+        func (i *Image) SetLabelWidth(width int) *Image
+        func (i *Image) SetSize(rows, columns int) *Image
+    type InputField
+        func NewInputField() *InputField
+        func (i *InputField) Autocomplete() *InputField
+        func (i *InputField) Blur()
+        func (i *InputField) Draw(screen tcell.Screen)
+        func (i *InputField) Focus(delegate func(p Primitive))
+        func (i *InputField) GetFieldHeight() int
+        func (i *InputField) GetFieldStyle() tcell.Style
+        func (i *InputField) GetFieldWidth() int
+        func (i *InputField) GetLabel() string
+        func (i *InputField) GetLabelStyle() tcell.Style
+        func (i *InputField) GetPlaceholderStyle() tcell.Style
+        func (i *InputField) GetText() string
+        func (i *InputField) HasFocus() bool
+        func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (i *InputField) MouseHandler() ...
+        func (i *InputField) SetAcceptanceFunc(handler func(textToCheck string, lastChar rune) bool) *InputField
+        func (i *InputField) SetAutocompleteFunc(callback func(currentText string) (entries []string)) *InputField
+        func (i *InputField) SetAutocompleteStyles(background tcell.Color, main, selected tcell.Style) *InputField
+        func (i *InputField) SetAutocompletedFunc(autocompleted func(text string, index int, source int) bool) *InputField
+        func (i *InputField) SetChangedFunc(handler func(text string)) *InputField
+        func (i *InputField) SetDisabled(disabled bool) FormItem
+        func (i *InputField) SetDoneFunc(handler func(key tcell.Key)) *InputField
+        func (i *InputField) SetFieldBackgroundColor(color tcell.Color) *InputField
+        func (i *InputField) SetFieldStyle(style tcell.Style) *InputField
+        func (i *InputField) SetFieldTextColor(color tcell.Color) *InputField
+        func (i *InputField) SetFieldWidth(width int) *InputField
+        func (i *InputField) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+        func (i *InputField) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+        func (i *InputField) SetLabel(label string) *InputField
+        func (i *InputField) SetLabelColor(color tcell.Color) *InputField
+        func (i *InputField) SetLabelStyle(style tcell.Style) *InputField
+        func (i *InputField) SetLabelWidth(width int) *InputField
+        func (i *InputField) SetMaskCharacter(mask rune) *InputField
+        func (i *InputField) SetPlaceholder(text string) *InputField
+        func (i *InputField) SetPlaceholderStyle(style tcell.Style) *InputField
+        func (i *InputField) SetPlaceholderTextColor(color tcell.Color) *InputField
+        func (i *InputField) SetText(text string) *InputField
+    type List
+        func NewList() *List
+        func (l *List) AddItem(mainText, secondaryText string, shortcut rune, selected func()) *List
+        func (l *List) Clear() *List
+        func (l *List) Draw(screen tcell.Screen)
+        func (l *List) FindItems(mainSearch, secondarySearch string, mustContainBoth, ignoreCase bool) (indices []int)
+        func (l *List) GetCurrentItem() int
+        func (l *List) GetItemCount() int
+        func (l *List) GetItemText(index int) (main, secondary string)
+        func (l *List) GetOffset() (int, int)
+        func (l *List) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (l *List) InsertItem(index int, mainText, secondaryText string, shortcut rune, selected func()) *List
+        func (l *List) MouseHandler() ...
+        func (l *List) RemoveItem(index int) *List
+        func (l *List) SetChangedFunc(handler func(index int, mainText string, secondaryText string, shortcut rune)) *List
+        func (l *List) SetCurrentItem(index int) *List
+        func (l *List) SetDoneFunc(handler func()) *List
+        func (l *List) SetHighlightFullLine(highlight bool) *List
+        func (l *List) SetItemText(index int, main, secondary string) *List
+        func (l *List) SetMainTextColor(color tcell.Color) *List
+        func (l *List) SetMainTextStyle(style tcell.Style) *List
+        func (l *List) SetOffset(items, horizontal int) *List
+        func (l *List) SetSecondaryTextColor(color tcell.Color) *List
+        func (l *List) SetSecondaryTextStyle(style tcell.Style) *List
+        func (l *List) SetSelectedBackgroundColor(color tcell.Color) *List
+        func (l *List) SetSelectedFocusOnly(focusOnly bool) *List
+        func (l *List) SetSelectedFunc(handler func(int, string, string, rune)) *List
+        func (l *List) SetSelectedStyle(style tcell.Style) *List
+        func (l *List) SetSelectedTextColor(color tcell.Color) *List
+        func (l *List) SetShortcutColor(color tcell.Color) *List
+        func (l *List) SetShortcutStyle(style tcell.Style) *List
+        func (l *List) SetWrapAround(wrapAround bool) *List
+        func (l *List) ShowSecondaryText(show bool) *List
+    type Modal
+        func NewModal() *Modal
+        func (m *Modal) AddButtons(labels []string) *Modal
+        func (m *Modal) ClearButtons() *Modal
+        func (m *Modal) Draw(screen tcell.Screen)
+        func (m *Modal) Focus(delegate func(p Primitive))
+        func (m *Modal) HasFocus() bool
+        func (m *Modal) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (m *Modal) MouseHandler() ...
+        func (m *Modal) SetBackgroundColor(color tcell.Color) *Modal
+        func (m *Modal) SetButtonActivatedStyle(style tcell.Style) *Modal
+        func (m *Modal) SetButtonBackgroundColor(color tcell.Color) *Modal
+        func (m *Modal) SetButtonStyle(style tcell.Style) *Modal
+        func (m *Modal) SetButtonTextColor(color tcell.Color) *Modal
+        func (m *Modal) SetDoneFunc(handler func(buttonIndex int, buttonLabel string)) *Modal
+        func (m *Modal) SetFocus(index int) *Modal
+        func (m *Modal) SetText(text string) *Modal
+        func (m *Modal) SetTextColor(color tcell.Color) *Modal
+    type MouseAction
+    type Pages
+        func NewPages() *Pages
+        func (p *Pages) AddAndSwitchToPage(name string, item Primitive, resize bool) *Pages
+        func (p *Pages) AddPage(name string, item Primitive, resize, visible bool) *Pages
+        func (p *Pages) Draw(screen tcell.Screen)
+        func (p *Pages) Focus(delegate func(p Primitive))
+        func (p *Pages) GetFrontPage() (name string, item Primitive)
+        func (p *Pages) GetPageCount() int
+        func (p *Pages) HasFocus() bool
+        func (p *Pages) HasPage(name string) bool
+        func (p *Pages) HidePage(name string) *Pages
+        func (p *Pages) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (p *Pages) MouseHandler() ...
+        func (p *Pages) RemovePage(name string) *Pages
+        func (p *Pages) SendToBack(name string) *Pages
+        func (p *Pages) SendToFront(name string) *Pages
+        func (p *Pages) SetChangedFunc(handler func()) *Pages
+        func (p *Pages) ShowPage(name string) *Pages
+        func (p *Pages) SwitchToPage(name string) *Pages
+    type Primitive
+    type Table
+        func NewTable() *Table
+        func (t *Table) Clear() *Table
+        func (t *Table) Draw(screen tcell.Screen)
+        func (t *Table) GetCell(row, column int) *TableCell
+        func (t *Table) GetColumnCount() int
+        func (t *Table) GetOffset() (row, column int)
+        func (t *Table) GetRowCount() int
+        func (t *Table) GetSelectable() (rows, columns bool)
+        func (t *Table) GetSelection() (row, column int)
+        func (t *Table) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (t *Table) InsertColumn(column int) *Table
+        func (t *Table) InsertRow(row int) *Table
+        func (t *Table) MouseHandler() ...
+        func (t *Table) RemoveColumn(column int) *Table
+        func (t *Table) RemoveRow(row int) *Table
+        func (t *Table) ScrollToBeginning() *Table
+        func (t *Table) ScrollToEnd() *Table
+        func (t *Table) Select(row, column int) *Table
+        func (t *Table) SetBorders(show bool) *Table
+        func (t *Table) SetBordersColor(color tcell.Color) *Table
+        func (t *Table) SetCell(row, column int, cell *TableCell) *Table
+        func (t *Table) SetCellSimple(row, column int, text string) *Table
+        func (t *Table) SetContent(content TableContent) *Table
+        func (t *Table) SetDoneFunc(handler func(key tcell.Key)) *Table
+        func (t *Table) SetEvaluateAllRows(all bool) *Table
+        func (t *Table) SetFixed(rows, columns int) *Table
+        func (t *Table) SetOffset(row, column int) *Table
+        func (t *Table) SetSelectable(rows, columns bool) *Table
+        func (t *Table) SetSelectedFunc(handler func(row, column int)) *Table
+        func (t *Table) SetSelectedStyle(style tcell.Style) *Table
+        func (t *Table) SetSelectionChangedFunc(handler func(row, column int)) *Table
+        func (t *Table) SetSeparator(separator rune) *Table
+        func (t *Table) SetWrapSelection(vertical, horizontal bool) *Table
+    type TableCell
+        func NewTableCell(text string) *TableCell
+        func (c *TableCell) GetLastPosition() (x, y, width int)
+        func (c *TableCell) GetReference() interface{}
+        func (c *TableCell) SetAlign(align int) *TableCell
+        func (c *TableCell) SetAttributes(attr tcell.AttrMask) *TableCell
+        func (c *TableCell) SetBackgroundColor(color tcell.Color) *TableCell
+        func (c *TableCell) SetClickedFunc(clicked func() bool) *TableCell
+        func (c *TableCell) SetExpansion(expansion int) *TableCell
+        func (c *TableCell) SetMaxWidth(maxWidth int) *TableCell
+        func (c *TableCell) SetReference(reference interface{}) *TableCell
+        func (c *TableCell) SetSelectable(selectable bool) *TableCell
+        func (c *TableCell) SetStyle(style tcell.Style) *TableCell
+        func (c *TableCell) SetText(text string) *TableCell
+        func (c *TableCell) SetTextColor(color tcell.Color) *TableCell
+        func (c *TableCell) SetTransparency(transparent bool) *TableCell
+    type TableContent
+    type TableContentReadOnly
+        func (t TableContentReadOnly) Clear()
+        func (t TableContentReadOnly) InsertColumn(column int)
+        func (t TableContentReadOnly) InsertRow(row int)
+        func (t TableContentReadOnly) RemoveColumn(column int)
+        func (t TableContentReadOnly) RemoveRow(row int)
+        func (t TableContentReadOnly) SetCell(row, column int, cell *TableCell)
+    type TextArea
+        func NewTextArea() *TextArea
+        func (t *TextArea) Draw(screen tcell.Screen)
+        func (t *TextArea) Focus(delegate func(p Primitive))
+        func (t *TextArea) GetCursor() (fromRow, fromColumn, toRow, toColumn int)
+        func (t *TextArea) GetDisabled() bool
+        func (t *TextArea) GetFieldHeight() int
+        func (t *TextArea) GetFieldWidth() int
+        func (t *TextArea) GetLabel() string
+        func (t *TextArea) GetLabelStyle() tcell.Style
+        func (t *TextArea) GetLabelWidth() int
+        func (t *TextArea) GetOffset() (row, column int)
+        func (t *TextArea) GetPlaceholderStyle() tcell.Style
+        func (t *TextArea) GetSelection() (text string, start int, end int)
+        func (t *TextArea) GetText() string
+        func (t *TextArea) GetTextLength() int
+        func (t *TextArea) GetTextStyle() tcell.Style
+        func (t *TextArea) HasSelection() bool
+        func (t *TextArea) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (t *TextArea) MouseHandler() ...
+        func (t *TextArea) Replace(start, end int, text string) *TextArea
+        func (t *TextArea) Select(start, end int) *TextArea
+        func (t *TextArea) SetChangedFunc(handler func()) *TextArea
+        func (t *TextArea) SetClipboard(copyToClipboard func(string), pasteFromClipboard func() string) *TextArea
+        func (t *TextArea) SetDisabled(disabled bool) FormItem
+        func (t *TextArea) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+        func (t *TextArea) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+        func (t *TextArea) SetLabel(label string) *TextArea
+        func (t *TextArea) SetLabelStyle(style tcell.Style) *TextArea
+        func (t *TextArea) SetLabelWidth(width int) *TextArea
+        func (t *TextArea) SetMaxLength(maxLength int) *TextArea
+        func (t *TextArea) SetMovedFunc(handler func()) *TextArea
+        func (t *TextArea) SetOffset(row, column int) *TextArea
+        func (t *TextArea) SetPlaceholder(placeholder string) *TextArea
+        func (t *TextArea) SetPlaceholderStyle(style tcell.Style) *TextArea
+        func (t *TextArea) SetSelectedStyle(style tcell.Style) *TextArea
+        func (t *TextArea) SetSize(rows, columns int) *TextArea
+        func (t *TextArea) SetText(text string, cursorAtTheEnd bool) *TextArea
+        func (t *TextArea) SetTextStyle(style tcell.Style) *TextArea
+        func (t *TextArea) SetWordWrap(wrapOnWords bool) *TextArea
+        func (t *TextArea) SetWrap(wrap bool) *TextArea
+    type TextView
+        func NewTextView() *TextView
+        func (t *TextView) BatchWriter() TextViewWriter
+        func (t *TextView) Clear() *TextView
+        func (t *TextView) Draw(screen tcell.Screen)
+        func (t *TextView) Focus(delegate func(p Primitive))
+        func (t *TextView) GetFieldHeight() int
+        func (t *TextView) GetFieldWidth() int
+        func (t *TextView) GetHighlights() (regionIDs []string)
+        func (t *TextView) GetLabel() string
+        func (t *TextView) GetOriginalLineCount() int
+        func (t *TextView) GetRegionText(regionID string) string
+        func (t *TextView) GetScrollOffset() (row, column int)
+        func (t *TextView) GetText(stripAllTags bool) string
+        func (t *TextView) HasFocus() bool
+        func (t *TextView) Highlight(regionIDs ...string) *TextView
+        func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (t *TextView) MouseHandler() ...
+        func (t *TextView) ScrollTo(row, column int) *TextView
+        func (t *TextView) ScrollToBeginning() *TextView
+        func (t *TextView) ScrollToEnd() *TextView
+        func (t *TextView) ScrollToHighlight() *TextView
+        func (t *TextView) SetBackgroundColor(color tcell.Color) *Box
+        func (t *TextView) SetChangedFunc(handler func()) *TextView
+        func (t *TextView) SetDisabled(disabled bool) FormItem
+        func (t *TextView) SetDoneFunc(handler func(key tcell.Key)) *TextView
+        func (t *TextView) SetDynamicColors(dynamic bool) *TextView
+        func (t *TextView) SetFinishedFunc(handler func(key tcell.Key)) FormItem
+        func (t *TextView) SetFormAttributes(labelWidth int, labelColor, bgColor, fieldTextColor, fieldBgColor tcell.Color) FormItem
+        func (t *TextView) SetHighlightedFunc(handler func(added, removed, remaining []string)) *TextView
+        func (t *TextView) SetLabel(label string) *TextView
+        func (t *TextView) SetLabelWidth(width int) *TextView
+        func (t *TextView) SetMaxLines(maxLines int) *TextView
+        func (t *TextView) SetRegions(regions bool) *TextView
+        func (t *TextView) SetScrollable(scrollable bool) *TextView
+        func (t *TextView) SetSize(rows, columns int) *TextView
+        func (t *TextView) SetText(text string) *TextView
+        func (t *TextView) SetTextAlign(align int) *TextView
+        func (t *TextView) SetTextColor(color tcell.Color) *TextView
+        func (t *TextView) SetTextStyle(style tcell.Style) *TextView
+        func (t *TextView) SetToggleHighlights(toggle bool) *TextView
+        func (t *TextView) SetWordWrap(wrapOnWords bool) *TextView
+        func (t *TextView) SetWrap(wrap bool) *TextView
+        func (t *TextView) Write(p []byte) (n int, err error)
+    type TextViewWriter
+        func (w TextViewWriter) Clear()
+        func (w TextViewWriter) Close() error
+        func (w TextViewWriter) HasFocus() bool
+        func (w TextViewWriter) Write(p []byte) (n int, err error)
+    type Theme
+    type TreeNode
+        func NewTreeNode(text string) *TreeNode
+        func (n *TreeNode) AddChild(node *TreeNode) *TreeNode
+        func (n *TreeNode) ClearChildren() *TreeNode
+        func (n *TreeNode) Collapse() *TreeNode
+        func (n *TreeNode) CollapseAll() *TreeNode
+        func (n *TreeNode) Expand() *TreeNode
+        func (n *TreeNode) ExpandAll() *TreeNode
+        func (n *TreeNode) GetChildren() []*TreeNode
+        func (n *TreeNode) GetColor() tcell.Color
+        func (n *TreeNode) GetLevel() int
+        func (n *TreeNode) GetReference() interface{}
+        func (n *TreeNode) GetText() string
+        func (n *TreeNode) IsExpanded() bool
+        func (n *TreeNode) RemoveChild(node *TreeNode) *TreeNode
+        func (n *TreeNode) SetChildren(childNodes []*TreeNode) *TreeNode
+        func (n *TreeNode) SetColor(color tcell.Color) *TreeNode
+        func (n *TreeNode) SetExpanded(expanded bool) *TreeNode
+        func (n *TreeNode) SetIndent(indent int) *TreeNode
+        func (n *TreeNode) SetReference(reference interface{}) *TreeNode
+        func (n *TreeNode) SetSelectable(selectable bool) *TreeNode
+        func (n *TreeNode) SetSelectedFunc(handler func()) *TreeNode
+        func (n *TreeNode) SetText(text string) *TreeNode
+        func (n *TreeNode) Walk(callback func(node, parent *TreeNode) bool) *TreeNode
+    type TreeView
+        func NewTreeView() *TreeView
+        func (t *TreeView) Draw(screen tcell.Screen)
+        func (t *TreeView) GetCurrentNode() *TreeNode
+        func (t *TreeView) GetPath(node *TreeNode) []*TreeNode
+        func (t *TreeView) GetRoot() *TreeNode
+        func (t *TreeView) GetRowCount() int
+        func (t *TreeView) GetScrollOffset() int
+        func (t *TreeView) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+        func (t *TreeView) MouseHandler() ...
+        func (t *TreeView) Move(offset int) *TreeView
+        func (t *TreeView) SetAlign(align bool) *TreeView
+        func (t *TreeView) SetChangedFunc(handler func(node *TreeNode)) *TreeView
+        func (t *TreeView) SetCurrentNode(node *TreeNode) *TreeView
+        func (t *TreeView) SetDoneFunc(handler func(key tcell.Key)) *TreeView
+        func (t *TreeView) SetGraphics(showGraphics bool) *TreeView
+        func (t *TreeView) SetGraphicsColor(color tcell.Color) *TreeView
+        func (t *TreeView) SetPrefixes(prefixes []string) *TreeView
+        func (t *TreeView) SetRoot(root *TreeNode) *TreeView
+        func (t *TreeView) SetSelectedFunc(handler func(node *TreeNode)) *TreeView
+        func (t *TreeView) SetTopLevel(topLevel int) *TreeView
+
+Constants ¶
+View Source
+
+const (
+	// One item per row.
+	FlexRow = 0
+	// One item per column.
+	FlexColumn = 1
+	// As defined in CSS, items distributed along a row.
+	FlexRowCSS = 1
+	// As defined in CSS, items distributed within a column.
+	FlexColumnCSS = 0
+)
+
+Flex directions.
+View Source
+
+const (
+	DitheringNone           = iota // No dithering.
+	DitheringFloydSteinberg        // Floyd-Steinberg dithering (the default).
+)
+
+Types of dithering applied to images.
+View Source
+
+const (
+	AutocompletedNavigate = iota // The user navigated the autocomplete list (using the errow keys).
+	AutocompletedTab             // The user selected an autocomplete entry using the tab key.
+	AutocompletedEnter           // The user selected an autocomplete entry using the enter key.
+	AutocompletedClick           // The user selected an autocomplete entry by clicking the mouse button on it.
+)
+
+View Source
+
+const (
+	// Block: General Punctuation U+2000-U+206F (http://unicode.org/charts/PDF/U2000.pdf)
+	SemigraphicsHorizontalEllipsis rune = '\u2026' // …
+
+	// Block: Box Drawing U+2500-U+257F (http://unicode.org/charts/PDF/U2500.pdf)
+	BoxDrawingsLightHorizontal                    rune = '\u2500' // ─
+	BoxDrawingsHeavyHorizontal                    rune = '\u2501' // ━
+	BoxDrawingsLightVertical                      rune = '\u2502' // │
+	BoxDrawingsHeavyVertical                      rune = '\u2503' // ┃
+	BoxDrawingsLightTripleDashHorizontal          rune = '\u2504' // ┄
+	BoxDrawingsHeavyTripleDashHorizontal          rune = '\u2505' // ┅
+	BoxDrawingsLightTripleDashVertical            rune = '\u2506' // ┆
+	BoxDrawingsHeavyTripleDashVertical            rune = '\u2507' // ┇
+	BoxDrawingsLightQuadrupleDashHorizontal       rune = '\u2508' // ┈
+	BoxDrawingsHeavyQuadrupleDashHorizontal       rune = '\u2509' // ┉
+	BoxDrawingsLightQuadrupleDashVertical         rune = '\u250a' // ┊
+	BoxDrawingsHeavyQuadrupleDashVertical         rune = '\u250b' // ┋
+	BoxDrawingsLightDownAndRight                  rune = '\u250c' // ┌
+	BoxDrawingsDownLightAndRightHeavy             rune = '\u250d' // ┍
+	BoxDrawingsDownHeavyAndRightLight             rune = '\u250e' // ┎
+	BoxDrawingsHeavyDownAndRight                  rune = '\u250f' // ┏
+	BoxDrawingsLightDownAndLeft                   rune = '\u2510' // ┐
+	BoxDrawingsDownLightAndLeftHeavy              rune = '\u2511' // ┑
+	BoxDrawingsDownHeavyAndLeftLight              rune = '\u2512' // ┒
+	BoxDrawingsHeavyDownAndLeft                   rune = '\u2513' // ┓
+	BoxDrawingsLightUpAndRight                    rune = '\u2514' // └
+	BoxDrawingsUpLightAndRightHeavy               rune = '\u2515' // ┕
+	BoxDrawingsUpHeavyAndRightLight               rune = '\u2516' // ┖
+	BoxDrawingsHeavyUpAndRight                    rune = '\u2517' // ┗

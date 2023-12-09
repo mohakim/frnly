@@ -1,0 +1,979 @@
+	BoxDrawingsLightUpAndLeft                     rune = '\u2518' // ┘
+	BoxDrawingsUpLightAndLeftHeavy                rune = '\u2519' // ┙
+	BoxDrawingsUpHeavyAndLeftLight                rune = '\u251a' // ┚
+	BoxDrawingsHeavyUpAndLeft                     rune = '\u251b' // ┛
+	BoxDrawingsLightVerticalAndRight              rune = '\u251c' // ├
+	BoxDrawingsVerticalLightAndRightHeavy         rune = '\u251d' // ┝
+	BoxDrawingsUpHeavyAndRightDownLight           rune = '\u251e' // ┞
+	BoxDrawingsDownHeavyAndRightUpLight           rune = '\u251f' // ┟
+	BoxDrawingsVerticalHeavyAndRightLight         rune = '\u2520' // ┠
+	BoxDrawingsDownLightAndRightUpHeavy           rune = '\u2521' // ┡
+	BoxDrawingsUpLightAndRightDownHeavy           rune = '\u2522' // ┢
+	BoxDrawingsHeavyVerticalAndRight              rune = '\u2523' // ┣
+	BoxDrawingsLightVerticalAndLeft               rune = '\u2524' // ┤
+	BoxDrawingsVerticalLightAndLeftHeavy          rune = '\u2525' // ┥
+	BoxDrawingsUpHeavyAndLeftDownLight            rune = '\u2526' // ┦
+	BoxDrawingsDownHeavyAndLeftUpLight            rune = '\u2527' // ┧
+	BoxDrawingsVerticalHeavyAndLeftLight          rune = '\u2528' // ┨
+	BoxDrawingsDownLightAndLeftUpHeavy            rune = '\u2529' // ┨
+	BoxDrawingsUpLightAndLeftDownHeavy            rune = '\u252a' // ┪
+	BoxDrawingsHeavyVerticalAndLeft               rune = '\u252b' // ┫
+	BoxDrawingsLightDownAndHorizontal             rune = '\u252c' // ┬
+	BoxDrawingsLeftHeavyAndRightDownLight         rune = '\u252d' // ┭
+	BoxDrawingsRightHeavyAndLeftDownLight         rune = '\u252e' // ┮
+	BoxDrawingsDownLightAndHorizontalHeavy        rune = '\u252f' // ┯
+	BoxDrawingsDownHeavyAndHorizontalLight        rune = '\u2530' // ┰
+	BoxDrawingsRightLightAndLeftDownHeavy         rune = '\u2531' // ┱
+	BoxDrawingsLeftLightAndRightDownHeavy         rune = '\u2532' // ┲
+	BoxDrawingsHeavyDownAndHorizontal             rune = '\u2533' // ┳
+	BoxDrawingsLightUpAndHorizontal               rune = '\u2534' // ┴
+	BoxDrawingsLeftHeavyAndRightUpLight           rune = '\u2535' // ┵
+	BoxDrawingsRightHeavyAndLeftUpLight           rune = '\u2536' // ┶
+	BoxDrawingsUpLightAndHorizontalHeavy          rune = '\u2537' // ┷
+	BoxDrawingsUpHeavyAndHorizontalLight          rune = '\u2538' // ┸
+	BoxDrawingsRightLightAndLeftUpHeavy           rune = '\u2539' // ┹
+	BoxDrawingsLeftLightAndRightUpHeavy           rune = '\u253a' // ┺
+	BoxDrawingsHeavyUpAndHorizontal               rune = '\u253b' // ┻
+	BoxDrawingsLightVerticalAndHorizontal         rune = '\u253c' // ┼
+	BoxDrawingsLeftHeavyAndRightVerticalLight     rune = '\u253d' // ┽
+	BoxDrawingsRightHeavyAndLeftVerticalLight     rune = '\u253e' // ┾
+	BoxDrawingsVerticalLightAndHorizontalHeavy    rune = '\u253f' // ┿
+	BoxDrawingsUpHeavyAndDownHorizontalLight      rune = '\u2540' // ╀
+	BoxDrawingsDownHeavyAndUpHorizontalLight      rune = '\u2541' // ╁
+	BoxDrawingsVerticalHeavyAndHorizontalLight    rune = '\u2542' // ╂
+	BoxDrawingsLeftUpHeavyAndRightDownLight       rune = '\u2543' // ╃
+	BoxDrawingsRightUpHeavyAndLeftDownLight       rune = '\u2544' // ╄
+	BoxDrawingsLeftDownHeavyAndRightUpLight       rune = '\u2545' // ╅
+	BoxDrawingsRightDownHeavyAndLeftUpLight       rune = '\u2546' // ╆
+	BoxDrawingsDownLightAndUpHorizontalHeavy      rune = '\u2547' // ╇
+	BoxDrawingsUpLightAndDownHorizontalHeavy      rune = '\u2548' // ╈
+	BoxDrawingsRightLightAndLeftVerticalHeavy     rune = '\u2549' // ╉
+	BoxDrawingsLeftLightAndRightVerticalHeavy     rune = '\u254a' // ╊
+	BoxDrawingsHeavyVerticalAndHorizontal         rune = '\u254b' // ╋
+	BoxDrawingsLightDoubleDashHorizontal          rune = '\u254c' // ╌
+	BoxDrawingsHeavyDoubleDashHorizontal          rune = '\u254d' // ╍
+	BoxDrawingsLightDoubleDashVertical            rune = '\u254e' // ╎
+	BoxDrawingsHeavyDoubleDashVertical            rune = '\u254f' // ╏
+	BoxDrawingsDoubleHorizontal                   rune = '\u2550' // ═
+	BoxDrawingsDoubleVertical                     rune = '\u2551' // ║
+	BoxDrawingsDownSingleAndRightDouble           rune = '\u2552' // ╒
+	BoxDrawingsDownDoubleAndRightSingle           rune = '\u2553' // ╓
+	BoxDrawingsDoubleDownAndRight                 rune = '\u2554' // ╔
+	BoxDrawingsDownSingleAndLeftDouble            rune = '\u2555' // ╕
+	BoxDrawingsDownDoubleAndLeftSingle            rune = '\u2556' // ╖
+	BoxDrawingsDoubleDownAndLeft                  rune = '\u2557' // ╗
+	BoxDrawingsUpSingleAndRightDouble             rune = '\u2558' // ╘
+	BoxDrawingsUpDoubleAndRightSingle             rune = '\u2559' // ╙
+	BoxDrawingsDoubleUpAndRight                   rune = '\u255a' // ╚
+	BoxDrawingsUpSingleAndLeftDouble              rune = '\u255b' // ╛
+	BoxDrawingsUpDoubleAndLeftSingle              rune = '\u255c' // ╜
+	BoxDrawingsDoubleUpAndLeft                    rune = '\u255d' // ╝
+	BoxDrawingsVerticalSingleAndRightDouble       rune = '\u255e' // ╞
+	BoxDrawingsVerticalDoubleAndRightSingle       rune = '\u255f' // ╟
+	BoxDrawingsDoubleVerticalAndRight             rune = '\u2560' // ╠
+	BoxDrawingsVerticalSingleAndLeftDouble        rune = '\u2561' // ╡
+	BoxDrawingsVerticalDoubleAndLeftSingle        rune = '\u2562' // ╢
+	BoxDrawingsDoubleVerticalAndLeft              rune = '\u2563' // ╣
+	BoxDrawingsDownSingleAndHorizontalDouble      rune = '\u2564' // ╤
+	BoxDrawingsDownDoubleAndHorizontalSingle      rune = '\u2565' // ╥
+	BoxDrawingsDoubleDownAndHorizontal            rune = '\u2566' // ╦
+	BoxDrawingsUpSingleAndHorizontalDouble        rune = '\u2567' // ╧
+	BoxDrawingsUpDoubleAndHorizontalSingle        rune = '\u2568' // ╨
+	BoxDrawingsDoubleUpAndHorizontal              rune = '\u2569' // ╩
+	BoxDrawingsVerticalSingleAndHorizontalDouble  rune = '\u256a' // ╪
+	BoxDrawingsVerticalDoubleAndHorizontalSingle  rune = '\u256b' // ╫
+	BoxDrawingsDoubleVerticalAndHorizontal        rune = '\u256c' // ╬
+	BoxDrawingsLightArcDownAndRight               rune = '\u256d' // ╭
+	BoxDrawingsLightArcDownAndLeft                rune = '\u256e' // ╮
+	BoxDrawingsLightArcUpAndLeft                  rune = '\u256f' // ╯
+	BoxDrawingsLightArcUpAndRight                 rune = '\u2570' // ╰
+	BoxDrawingsLightDiagonalUpperRightToLowerLeft rune = '\u2571' // ╱
+	BoxDrawingsLightDiagonalUpperLeftToLowerRight rune = '\u2572' // ╲
+	BoxDrawingsLightDiagonalCross                 rune = '\u2573' // ╳
+	BoxDrawingsLightLeft                          rune = '\u2574' // ╴
+	BoxDrawingsLightUp                            rune = '\u2575' // ╵
+	BoxDrawingsLightRight                         rune = '\u2576' // ╶
+	BoxDrawingsLightDown                          rune = '\u2577' // ╷
+	BoxDrawingsHeavyLeft                          rune = '\u2578' // ╸
+	BoxDrawingsHeavyUp                            rune = '\u2579' // ╹
+	BoxDrawingsHeavyRight                         rune = '\u257a' // ╺
+	BoxDrawingsHeavyDown                          rune = '\u257b' // ╻
+	BoxDrawingsLightLeftAndHeavyRight             rune = '\u257c' // ╼
+	BoxDrawingsLightUpAndHeavyDown                rune = '\u257d' // ╽
+	BoxDrawingsHeavyLeftAndLightRight             rune = '\u257e' // ╾
+	BoxDrawingsHeavyUpAndLightDown                rune = '\u257f' // ╿
+
+	// Block Elements.
+	BlockUpperHalfBlock                              rune = '\u2580' // ▀
+	BlockLowerOneEighthBlock                         rune = '\u2581' // ▁
+	BlockLowerOneQuarterBlock                        rune = '\u2582' // ▂
+	BlockLowerThreeEighthsBlock                      rune = '\u2583' // ▃
+	BlockLowerHalfBlock                              rune = '\u2584' // ▄
+	BlockLowerFiveEighthsBlock                       rune = '\u2585' // ▅
+	BlockLowerThreeQuartersBlock                     rune = '\u2586' // ▆
+	BlockLowerSevenEighthsBlock                      rune = '\u2587' // ▇
+	BlockFullBlock                                   rune = '\u2588' // █
+	BlockLeftSevenEighthsBlock                       rune = '\u2589' // ▉
+	BlockLeftThreeQuartersBlock                      rune = '\u258A' // ▊
+	BlockLeftFiveEighthsBlock                        rune = '\u258B' // ▋
+	BlockLeftHalfBlock                               rune = '\u258C' // ▌
+	BlockLeftThreeEighthsBlock                       rune = '\u258D' // ▍
+	BlockLeftOneQuarterBlock                         rune = '\u258E' // ▎
+	BlockLeftOneEighthBlock                          rune = '\u258F' // ▏
+	BlockRightHalfBlock                              rune = '\u2590' // ▐
+	BlockLightShade                                  rune = '\u2591' // ░
+	BlockMediumShade                                 rune = '\u2592' // ▒
+	BlockDarkShade                                   rune = '\u2593' // ▓
+	BlockUpperOneEighthBlock                         rune = '\u2594' // ▔
+	BlockRightOneEighthBlock                         rune = '\u2595' // ▕
+	BlockQuadrantLowerLeft                           rune = '\u2596' // ▖
+	BlockQuadrantLowerRight                          rune = '\u2597' // ▗
+	BlockQuadrantUpperLeft                           rune = '\u2598' // ▘
+	BlockQuadrantUpperLeftAndLowerLeftAndLowerRight  rune = '\u2599' // ▙
+	BlockQuadrantUpperLeftAndLowerRight              rune = '\u259A' // ▚
+	BlockQuadrantUpperLeftAndUpperRightAndLowerLeft  rune = '\u259B' // ▛
+	BlockQuadrantUpperLeftAndUpperRightAndLowerRight rune = '\u259C' // ▜
+	BlockQuadrantUpperRight                          rune = '\u259D' // ▝
+	BlockQuadrantUpperRightAndLowerLeft              rune = '\u259E' // ▞
+	BlockQuadrantUpperRightAndLowerLeftAndLowerRight rune = '\u259F' // ▟
+)
+
+Semigraphics provides an easy way to access unicode characters for drawing.
+
+Named like the unicode characters, 'Semigraphics'-prefix used if unicode block isn't prefixed itself.
+View Source
+
+const (
+	AlignLeft = iota
+	AlignCenter
+	AlignRight
+	AlignTop    = 0
+	AlignBottom = 2
+)
+
+Text alignment within a box. Also used to align images.
+View Source
+
+const TrueColor = 16777216
+
+The number of colors supported by true color terminals (R*G*B = 256*256*256).
+Variables ¶
+View Source
+
+var (
+	// DefaultFormFieldWidth is the default field screen width of form elements
+	// whose field width is flexible (0). This is used in the Form class for
+	// horizontal layouts.
+	DefaultFormFieldWidth = 10
+
+	// DefaultFormFieldHeight is the default field height of multi-line form
+	// elements whose field height is flexible (0).
+	DefaultFormFieldHeight = 5
+)
+
+View Source
+
+var (
+	// InputFieldInteger accepts integers.
+	InputFieldInteger = func(text string, ch rune) bool {
+		if text == "-" {
+			return true
+		}
+		_, err := strconv.Atoi(text)
+		return err == nil
+	}
+
+	// InputFieldFloat accepts floating-point numbers.
+	InputFieldFloat = func(text string, ch rune) bool {
+		if text == "-" || text == "." || text == "-." {
+			return true
+		}
+		_, err := strconv.ParseFloat(text, 64)
+		return err == nil
+	}
+
+	// InputFieldMaxLength returns an input field accept handler which accepts
+	// input strings up to a given length. Use it like this:
+	//
+	//   inputField.SetAcceptanceFunc(InputFieldMaxLength(10)) // Accept up to 10 characters.
+	InputFieldMaxLength = func(maxLength int) func(text string, ch rune) bool {
+		return func(text string, ch rune) bool {
+			return len([]rune(text)) <= maxLength
+		}
+	}
+)
+
+Predefined InputField acceptance functions.
+View Source
+
+var Borders = struct {
+	Horizontal  rune
+	Vertical    rune
+	TopLeft     rune
+	TopRight    rune
+	BottomLeft  rune
+	BottomRight rune
+
+	LeftT   rune
+	RightT  rune
+	TopT    rune
+	BottomT rune
+	Cross   rune
+
+	HorizontalFocus  rune
+	VerticalFocus    rune
+	TopLeftFocus     rune
+	TopRightFocus    rune
+	BottomLeftFocus  rune
+	BottomRightFocus rune
+}{
+	Horizontal:  BoxDrawingsLightHorizontal,
+	Vertical:    BoxDrawingsLightVertical,
+	TopLeft:     BoxDrawingsLightDownAndRight,
+	TopRight:    BoxDrawingsLightDownAndLeft,
+	BottomLeft:  BoxDrawingsLightUpAndRight,
+	BottomRight: BoxDrawingsLightUpAndLeft,
+
+	LeftT:   BoxDrawingsLightVerticalAndRight,
+	RightT:  BoxDrawingsLightVerticalAndLeft,
+	TopT:    BoxDrawingsLightDownAndHorizontal,
+	BottomT: BoxDrawingsLightUpAndHorizontal,
+	Cross:   BoxDrawingsLightVerticalAndHorizontal,
+
+	HorizontalFocus:  BoxDrawingsDoubleHorizontal,
+	VerticalFocus:    BoxDrawingsDoubleVertical,
+	TopLeftFocus:     BoxDrawingsDoubleDownAndRight,
+	TopRightFocus:    BoxDrawingsDoubleDownAndLeft,
+	BottomLeftFocus:  BoxDrawingsDoubleUpAndRight,
+	BottomRightFocus: BoxDrawingsDoubleUpAndLeft,
+}
+
+Borders defines various borders used when primitives are drawn. These may be changed to accommodate a different look and feel.
+View Source
+
+var DoubleClickInterval = 500 * time.Millisecond
+
+DoubleClickInterval specifies the maximum time between clicks to register a double click rather than click.
+View Source
+
+var NewLine = "\n"
+
+NewLine is the string sequence to be inserted when hitting the Enter key in a TextArea. The default is "\n" but you may change it to "\r\n" if required.
+View Source
+
+var SemigraphicJoints = map[string]rune{
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightVertical}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightDownAndRight}): BoxDrawingsLightDownAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightDownAndLeft}): BoxDrawingsLightDownAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightUpAndRight}): BoxDrawingsLightUpAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightUpAndLeft}): BoxDrawingsLightUpAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightVerticalAndRight}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightDownAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightUpAndHorizontal,
+
+	string([]rune{BoxDrawingsLightHorizontal, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightDownAndRight}): BoxDrawingsLightVerticalAndRight,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightDownAndLeft}): BoxDrawingsLightVerticalAndLeft,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightUpAndRight}): BoxDrawingsLightVerticalAndRight,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightUpAndLeft}): BoxDrawingsLightVerticalAndLeft,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightVerticalAndRight}): BoxDrawingsLightVerticalAndRight,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndLeft,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVertical, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightDownAndLeft}): BoxDrawingsLightDownAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightUpAndRight}): BoxDrawingsLightVerticalAndRight,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightUpAndLeft}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightVerticalAndRight}): BoxDrawingsLightVerticalAndRight,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightDownAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndRight, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightUpAndRight}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightUpAndLeft}): BoxDrawingsLightVerticalAndLeft,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightVerticalAndRight}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndLeft,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightDownAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndLeft, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndRight, BoxDrawingsLightUpAndLeft}): BoxDrawingsLightUpAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndRight, BoxDrawingsLightVerticalAndRight}): BoxDrawingsLightVerticalAndRight,
+
+	string([]rune{BoxDrawingsLightUpAndRight, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndRight, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndRight, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightUpAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndRight, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndLeft, BoxDrawingsLightVerticalAndRight}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndLeft, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndLeft,
+
+	string([]rune{BoxDrawingsLightUpAndLeft, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndLeft, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightUpAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndLeft, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndRight, BoxDrawingsLightVerticalAndLeft}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndRight, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndRight, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndRight, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndLeft, BoxDrawingsLightDownAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndLeft, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightVerticalAndLeft, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndHorizontal, BoxDrawingsLightUpAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightDownAndHorizontal, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+
+	string([]rune{BoxDrawingsLightUpAndHorizontal, BoxDrawingsLightVerticalAndHorizontal}): BoxDrawingsLightVerticalAndHorizontal,
+}
+
+SemigraphicJoints is a map for joining semigraphic (or otherwise) runes. So far only light lines are supported but if you want to change the border styling you need to provide the joints, too. The matching will be sorted ascending by rune value, so you don't need to provide all rune combinations, e.g. (─) + (│) = (┼) will also match (│) + (─) = (┼)
+View Source
+
+var Styles = Theme{
+	PrimitiveBackgroundColor:    tcell.ColorBlack,
+	ContrastBackgroundColor:     tcell.ColorBlue,
+	MoreContrastBackgroundColor: tcell.ColorGreen,
+	BorderColor:                 tcell.ColorWhite,
+	TitleColor:                  tcell.ColorWhite,
+	GraphicsColor:               tcell.ColorWhite,
+	PrimaryTextColor:            tcell.ColorWhite,
+	SecondaryTextColor:          tcell.ColorYellow,
+	TertiaryTextColor:           tcell.ColorGreen,
+	InverseTextColor:            tcell.ColorBlue,
+	ContrastSecondaryTextColor:  tcell.ColorNavy,
+}
+
+Styles defines the theme for applications. The default is for a black background and some basic colors: black, white, yellow, green, cyan, and blue.
+View Source
+
+var TabSize = 4
+
+TabSize is the number of spaces with which a tab character will be replaced.
+Functions ¶
+func ANSIWriter ¶
+
+func ANSIWriter(writer io.Writer) io.Writer
+
+ANSIWriter returns an io.Writer which translates any ANSI escape codes written to it into tview style tags. Other escape codes don't have an effect and are simply removed. The translated text is written to the provided writer.
+func Escape ¶
+
+func Escape(text string) string
+
+Escape escapes the given text such that color and/or region tags are not recognized and substituted by the print functions of this package. For example, to include a tag-like string in a box title or in a TextView:
+
+box.SetTitle(tview.Escape("[squarebrackets]"))
+fmt.Fprint(textView, tview.Escape(`["quoted"]`))
+
+func Print ¶
+
+func Print(screen tcell.Screen, text string, x, y, maxWidth, align int, color tcell.Color) (int, int)
+
+Print prints text onto the screen into the given box at (x,y,maxWidth,1), not exceeding that box. "align" is one of AlignLeft, AlignCenter, or AlignRight. The screen's background color will not be changed.
+
+You can change the colors and text styles mid-text by inserting a style tag. See the package description for details.
+
+Returns the number of actual bytes of the text printed (including style tags) and the actual width used for the printed runes.
+func PrintJoinedSemigraphics ¶
+
+func PrintJoinedSemigraphics(screen tcell.Screen, x, y int, ch rune, style tcell.Style)
+
+PrintJoinedSemigraphics prints a semigraphics rune into the screen at the given position with the given style, joining it with any existing semigraphics rune.At this point, only regular single line borders are supported.
+func PrintSimple ¶
+
+func PrintSimple(screen tcell.Screen, text string, x, y int)
+
+PrintSimple prints white text to the screen at the given position.
+func TaggedStringWidth ¶
+
+func TaggedStringWidth(text string) (width int)
+
+TaggedStringWidth returns the width of the given string needed to print it on screen. The text may contain style tags which are not counted.
+func TranslateANSI ¶
+
+func TranslateANSI(text string) string
+
+TranslateANSI replaces ANSI escape sequences found in the provided string with tview's style tags and returns the resulting string.
+func WordWrap ¶
+
+func WordWrap(text string, width int) (lines []string)
+
+WordWrap splits a text such that each resulting line does not exceed the given screen width. Split points are determined using the algorithm described in Unicode Standard Annex #14.
+
+This function considers style tags to have no width.
+Types ¶
+type Application ¶
+
+type Application struct {
+	sync.RWMutex
+	// contains filtered or unexported fields
+}
+
+Application represents the top node of an application.
+
+It is not strictly required to use this class as none of the other classes depend on it. However, it provides useful tools to set up an application and plays nicely with all widgets.
+
+The following command displays a primitive p on the screen until Ctrl-C is pressed:
+
+if err := tview.NewApplication().SetRoot(p, true).Run(); err != nil {
+    panic(err)
+}
+
+func NewApplication ¶
+
+func NewApplication() *Application
+
+NewApplication creates and returns a new application.
+func (*Application) Draw ¶
+
+func (a *Application) Draw() *Application
+
+Draw refreshes the screen (during the next update cycle). It calls the Draw() function of the application's root primitive and then syncs the screen buffer. It is almost never necessary to call this function. It can actually deadlock your application if you call it from the main thread (e.g. in a callback function of a widget). Please see https://github.com/rivo/tview/wiki/Concurrency for details.
+func (*Application) EnableMouse ¶
+
+func (a *Application) EnableMouse(enable bool) *Application
+
+EnableMouse enables mouse events or disables them (if "false" is provided).
+func (*Application) ForceDraw ¶
+
+func (a *Application) ForceDraw() *Application
+
+ForceDraw refreshes the screen immediately. Use this function with caution as it may lead to race conditions with updates to primitives in other goroutines. It is always preferable to call Application.Draw instead. Never call this function from a goroutine.
+
+It is safe to call this function during queued updates and direct event handling.
+func (*Application) GetAfterDrawFunc ¶
+
+func (a *Application) GetAfterDrawFunc() func(screen tcell.Screen)
+
+GetAfterDrawFunc returns the callback function installed with SetAfterDrawFunc() or nil if none has been installed.
+func (*Application) GetBeforeDrawFunc ¶
+
+func (a *Application) GetBeforeDrawFunc() func(screen tcell.Screen) bool
+
+GetBeforeDrawFunc returns the callback function installed with SetBeforeDrawFunc() or nil if none has been installed.
+func (*Application) GetFocus ¶
+
+func (a *Application) GetFocus() Primitive
+
+GetFocus returns the primitive which has the current focus. If none has it, nil is returned.
+func (*Application) GetInputCapture ¶
+
+func (a *Application) GetInputCapture() func(event *tcell.EventKey) *tcell.EventKey
+
+GetInputCapture returns the function installed with SetInputCapture() or nil if no such function has been installed.
+func (*Application) GetMouseCapture ¶
+
+func (a *Application) GetMouseCapture() func(event *tcell.EventMouse, action MouseAction) (*tcell.EventMouse, MouseAction)
+
+GetMouseCapture returns the function installed with SetMouseCapture() or nil if no such function has been installed.
+func (*Application) QueueEvent ¶
+
+func (a *Application) QueueEvent(event tcell.Event) *Application
+
+QueueEvent sends an event to the Application event loop.
+
+It is not recommended for event to be nil.
+func (*Application) QueueUpdate ¶
+
+func (a *Application) QueueUpdate(f func()) *Application
+
+QueueUpdate is used to synchronize access to primitives from non-main goroutines. The provided function will be executed as part of the event loop and thus will not cause race conditions with other such update functions or the Draw() function.
+
+Note that Draw() is not implicitly called after the execution of f as that may not be desirable. You can call Draw() from f if the screen should be refreshed after each update. Alternatively, use QueueUpdateDraw() to follow up with an immediate refresh of the screen.
+
+This function returns after f has executed.
+func (*Application) QueueUpdateDraw ¶
+
+func (a *Application) QueueUpdateDraw(f func()) *Application
+
+QueueUpdateDraw works like QueueUpdate() except it refreshes the screen immediately after executing f.
+func (*Application) ResizeToFullScreen ¶
+
+func (a *Application) ResizeToFullScreen(p Primitive) *Application
+
+ResizeToFullScreen resizes the given primitive such that it fills the entire screen.
+func (*Application) Run ¶
+
+func (a *Application) Run() error
+
+Run starts the application and thus the event loop. This function returns when Stop() was called.
+func (*Application) SetAfterDrawFunc ¶
+
+func (a *Application) SetAfterDrawFunc(handler func(screen tcell.Screen)) *Application
+
+SetAfterDrawFunc installs a callback function which is invoked after the root primitive was drawn during screen updates.
+
+Provide nil to uninstall the callback function.
+func (*Application) SetBeforeDrawFunc ¶
+
+func (a *Application) SetBeforeDrawFunc(handler func(screen tcell.Screen) bool) *Application
+
+SetBeforeDrawFunc installs a callback function which is invoked just before the root primitive is drawn during screen updates. If the function returns true, drawing will not continue, i.e. the root primitive will not be drawn (and an after-draw-handler will not be called).
+
+Note that the screen is not cleared by the application. To clear the screen, you may call screen.Clear().
+
+Provide nil to uninstall the callback function.
+func (*Application) SetFocus ¶
+
+func (a *Application) SetFocus(p Primitive) *Application
+
+SetFocus sets the focus to a new primitive. All key events will be directed down the hierarchy (starting at the root) until a primitive handles them, which per default goes towards the focused primitive.
+
+Blur() will be called on the previously focused primitive. Focus() will be called on the new primitive.
+func (*Application) SetInputCapture ¶
+
+func (a *Application) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) *Application
+
+SetInputCapture sets a function which captures all key events before they are forwarded to the key event handler of the primitive which currently has focus. This function can then choose to forward that key event (or a different one) by returning it or stop the key event processing by returning nil.
+
+The only default global key event is Ctrl-C which stops the application. It requires special handling:
+
+    If you do not wish to change the default behavior, return the original event object passed to your input capture function.
+    If you wish to block Ctrl-C from any functionality, return nil.
+    If you do not wish Ctrl-C to stop the application but still want to forward the Ctrl-C event to primitives down the hierarchy, return a new key event with the same key and modifiers, e.g. tcell.NewEventKey(tcell.KeyCtrlC, 0, tcell.ModNone).
+
+func (*Application) SetMouseCapture ¶
+
+func (a *Application) SetMouseCapture(capture func(event *tcell.EventMouse, action MouseAction) (*tcell.EventMouse, MouseAction)) *Application
+
+SetMouseCapture sets a function which captures mouse events (consisting of the original tcell mouse event and the semantic mouse action) before they are forwarded to the appropriate mouse event handler. This function can then choose to forward that event (or a different one) by returning it or stop the event processing by returning a nil mouse event.
+func (*Application) SetRoot ¶
+
+func (a *Application) SetRoot(root Primitive, fullscreen bool) *Application
+
+SetRoot sets the root primitive for this application. If "fullscreen" is set to true, the root primitive's position will be changed to fill the screen.
+
+This function must be called at least once or nothing will be displayed when the application starts.
+
+It also calls SetFocus() on the primitive.
+func (*Application) SetScreen ¶
+
+func (a *Application) SetScreen(screen tcell.Screen) *Application
+
+SetScreen allows you to provide your own tcell.Screen object. For most applications, this is not needed and you should be familiar with tcell.Screen when using this function.
+
+This function is typically called before the first call to Run(). Init() need not be called on the screen.
+func (*Application) Stop ¶
+
+func (a *Application) Stop()
+
+Stop stops the application, causing Run() to return.
+func (*Application) Suspend ¶
+
+func (a *Application) Suspend(f func()) bool
+
+Suspend temporarily suspends the application by exiting terminal UI mode and invoking the provided function "f". When "f" returns, terminal UI mode is entered again and the application resumes.
+
+A return value of true indicates that the application was suspended and "f" was called. If false is returned, the application was already suspended, terminal UI mode was not exited, and "f" was not called.
+func (*Application) Sync ¶
+
+func (a *Application) Sync() *Application
+
+Sync forces a full re-sync of the screen buffer with the actual screen during the next event cycle. This is useful for when the terminal screen is corrupted so you may want to offer your users a keyboard shortcut to refresh the screen.
+type Box ¶
+
+type Box struct {
+	// contains filtered or unexported fields
+}
+
+Box implements the Primitive interface with an empty background and optional elements such as a border and a title. Box itself does not hold any content but serves as the superclass of all other primitives. Subclasses add their own content, typically (but not necessarily) keeping their content within the box's rectangle.
+
+Box provides a number of utility functions available to all primitives.
+
+See https://github.com/rivo/tview/wiki/Box for an example.
+func NewBox ¶
+
+func NewBox() *Box
+
+NewBox returns a Box without a border.
+func (*Box) Blur ¶
+
+func (b *Box) Blur()
+
+Blur is called when this primitive loses focus.
+func (*Box) Draw ¶
+
+func (b *Box) Draw(screen tcell.Screen)
+
+Draw draws this primitive onto the screen.
+func (*Box) DrawForSubclass ¶
+
+func (b *Box) DrawForSubclass(screen tcell.Screen, p Primitive)
+
+DrawForSubclass draws this box under the assumption that primitive p is a subclass of this box. This is needed e.g. to draw proper box frames which depend on the subclass's focus.
+
+Only call this function from your own custom primitives. It is not needed in applications that have no custom primitives.
+func (*Box) Focus ¶
+
+func (b *Box) Focus(delegate func(p Primitive))
+
+Focus is called when this primitive receives focus.
+func (*Box) GetBackgroundColor ¶
+
+func (b *Box) GetBackgroundColor() tcell.Color
+
+GetBackgroundColor returns the box's background color.
+func (*Box) GetBorderAttributes ¶
+
+func (b *Box) GetBorderAttributes() tcell.AttrMask
+
+GetBorderAttributes returns the border's style attributes.
+func (*Box) GetBorderColor ¶
+
+func (b *Box) GetBorderColor() tcell.Color
+
+GetBorderColor returns the box's border color.
+func (*Box) GetDrawFunc ¶
+
+func (b *Box) GetDrawFunc() func(screen tcell.Screen, x, y, width, height int) (int, int, int, int)
+
+GetDrawFunc returns the callback function which was installed with SetDrawFunc() or nil if no such function has been installed.
+func (*Box) GetInnerRect ¶
+
+func (b *Box) GetInnerRect() (int, int, int, int)
+
+GetInnerRect returns the position of the inner rectangle (x, y, width, height), without the border and without any padding. Width and height values will clamp to 0 and thus never be negative.
+func (*Box) GetInputCapture ¶
+
+func (b *Box) GetInputCapture() func(event *tcell.EventKey) *tcell.EventKey
+
+GetInputCapture returns the function installed with SetInputCapture() or nil if no such function has been installed.
+func (*Box) GetMouseCapture ¶
+
+func (b *Box) GetMouseCapture() func(action MouseAction, event *tcell.EventMouse) (MouseAction, *tcell.EventMouse)
+
+GetMouseCapture returns the function installed with SetMouseCapture() or nil if no such function has been installed.
+func (*Box) GetRect ¶
+
+func (b *Box) GetRect() (int, int, int, int)
+
+GetRect returns the current position of the rectangle, x, y, width, and height.
+func (*Box) GetTitle ¶
+
+func (b *Box) GetTitle() string
+
+GetTitle returns the box's current title.
+func (*Box) HasFocus ¶
+
+func (b *Box) HasFocus() bool
+
+HasFocus returns whether or not this primitive has focus.
+func (*Box) InRect ¶
+
+func (b *Box) InRect(x, y int) bool
+
+InRect returns true if the given coordinate is within the bounds of the box's rectangle.
+func (*Box) InputHandler ¶
+
+func (b *Box) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+
+InputHandler returns nil.
+func (*Box) MouseHandler ¶
+
+func (b *Box) MouseHandler() func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
+
+MouseHandler returns nil.
+func (*Box) SetBackgroundColor ¶
+
+func (b *Box) SetBackgroundColor(color tcell.Color) *Box
+
+SetBackgroundColor sets the box's background color.
+func (*Box) SetBlurFunc ¶
+
+func (b *Box) SetBlurFunc(callback func()) *Box
+
+SetBlurFunc sets a callback function which is invoked when this primitive loses focus. This does not apply to container primitives such as Flex or Grid.
+
+Set to nil to remove the callback function.
+func (*Box) SetBorder ¶
+
+func (b *Box) SetBorder(show bool) *Box
+
+SetBorder sets the flag indicating whether or not the box should have a border.
+func (*Box) SetBorderAttributes ¶
+
+func (b *Box) SetBorderAttributes(attr tcell.AttrMask) *Box
+
+SetBorderAttributes sets the border's style attributes. You can combine different attributes using bitmask operations:
+
+box.SetBorderAttributes(tcell.AttrUnderline | tcell.AttrBold)
+
+func (*Box) SetBorderColor ¶
+
+func (b *Box) SetBorderColor(color tcell.Color) *Box
+
+SetBorderColor sets the box's border color.
+func (*Box) SetBorderPadding ¶
+
+func (b *Box) SetBorderPadding(top, bottom, left, right int) *Box
+
+SetBorderPadding sets the size of the borders around the box content.
+func (*Box) SetBorderStyle ¶
+
+func (b *Box) SetBorderStyle(style tcell.Style) *Box
+
+SetBorderStyle sets the box's border style.
+func (*Box) SetDrawFunc ¶
+
+func (b *Box) SetDrawFunc(handler func(screen tcell.Screen, x, y, width, height int) (int, int, int, int)) *Box
+
+SetDrawFunc sets a callback function which is invoked after the box primitive has been drawn. This allows you to add a more individual style to the box (and all primitives which extend it).
+
+The function is provided with the box's dimensions (set via SetRect()). It must return the box's inner dimensions (x, y, width, height) which will be returned by GetInnerRect(), used by descendent primitives to draw their own content.
+func (*Box) SetFocusFunc ¶
+
+func (b *Box) SetFocusFunc(callback func()) *Box
+
+SetFocusFunc sets a callback function which is invoked when this primitive receives focus. Container primitives such as Flex or Grid may not be notified if one of their descendents receive focus directly.
+
+Set to nil to remove the callback function.
+func (*Box) SetInputCapture ¶
+
+func (b *Box) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) *Box
+
+SetInputCapture installs a function which captures key events before they are forwarded to the primitive's default key event handler. This function can then choose to forward that key event (or a different one) to the default handler by returning it. If nil is returned, the default handler will not be called.
+
+Providing a nil handler will remove a previously existing handler.
+
+This function can also be used on container primitives (like Flex, Grid, or Form) as keyboard events will be handed down until they are handled.
+func (*Box) SetMouseCapture ¶
+
+func (b *Box) SetMouseCapture(capture func(action MouseAction, event *tcell.EventMouse) (MouseAction, *tcell.EventMouse)) *Box
+
+SetMouseCapture sets a function which captures mouse events (consisting of the original tcell mouse event and the semantic mouse action) before they are forwarded to the primitive's default mouse event handler. This function can then choose to forward that event (or a different one) by returning it or returning a nil mouse event, in which case the default handler will not be called.
+
+Providing a nil handler will remove a previously existing handler.
+func (*Box) SetRect ¶
+
+func (b *Box) SetRect(x, y, width, height int)
+
+SetRect sets a new position of the primitive. Note that this has no effect if this primitive is part of a layout (e.g. Flex, Grid) or if it was added like this:
+
+application.SetRoot(p, true)
+
+func (*Box) SetTitle ¶
+
+func (b *Box) SetTitle(title string) *Box
+
+SetTitle sets the box's title.
+func (*Box) SetTitleAlign ¶
+
+func (b *Box) SetTitleAlign(align int) *Box
+
+SetTitleAlign sets the alignment of the title, one of AlignLeft, AlignCenter, or AlignRight.
+func (*Box) SetTitleColor ¶
+
+func (b *Box) SetTitleColor(color tcell.Color) *Box
+
+SetTitleColor sets the box's title color.
+func (*Box) WrapInputHandler ¶
+
+func (b *Box) WrapInputHandler(inputHandler func(*tcell.EventKey, func(p Primitive))) func(*tcell.EventKey, func(p Primitive))
+
+WrapInputHandler wraps an input handler (see InputHandler()) with the functionality to capture input (see SetInputCapture()) before passing it on to the provided (default) input handler.
+
+This is only meant to be used by subclassing primitives.
+func (*Box) WrapMouseHandler ¶
+
+func (b *Box) WrapMouseHandler(mouseHandler func(MouseAction, *tcell.EventMouse, func(p Primitive)) (bool, Primitive)) func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
+
+WrapMouseHandler wraps a mouse event handler (see MouseHandler()) with the functionality to capture mouse events (see SetMouseCapture()) before passing them on to the provided (default) event handler.
+
+This is only meant to be used by subclassing primitives.
+type Button ¶
+
+type Button struct {
+	*Box
+	// contains filtered or unexported fields
+}
+
+Button is labeled box that triggers an action when selected.
+
+See https://github.com/rivo/tview/wiki/Button for an example.
+func NewButton ¶
+
+func NewButton(label string) *Button
+
+NewButton returns a new input field.
+func (*Button) Draw ¶
+
+func (b *Button) Draw(screen tcell.Screen)
+
+Draw draws this primitive onto the screen.
+func (*Button) GetLabel ¶
+
+func (b *Button) GetLabel() string
+
+GetLabel returns the button text.
+func (*Button) InputHandler ¶
+
+func (b *Button) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+
+InputHandler returns the handler for this primitive.
+func (*Button) IsDisabled ¶
+
+func (b *Button) IsDisabled() bool
+
+IsDisabled returns whether or not the button is disabled.
+func (*Button) MouseHandler ¶
+
+func (b *Button) MouseHandler() func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
+
+MouseHandler returns the mouse handler for this primitive.
+func (*Button) SetActivatedStyle ¶
+
+func (b *Button) SetActivatedStyle(style tcell.Style) *Button
+
+SetActivatedStyle sets the style of the button used when it is focused.
+func (*Button) SetBackgroundColorActivated ¶
+
+func (b *Button) SetBackgroundColorActivated(color tcell.Color) *Button
+
+SetBackgroundColorActivated sets the background color of the button text when the button is in focus.
+func (*Button) SetDisabled ¶
+
+func (b *Button) SetDisabled(disabled bool) *Button
+
+SetDisabled sets whether or not the button is disabled. Disabled buttons cannot be activated.
+
+If the button is part of a form, you should set focus to the form itself after calling this function to set focus to the next non-disabled form item.
+func (*Button) SetDisabledStyle ¶
+
+func (b *Button) SetDisabledStyle(style tcell.Style) *Button
+
+SetDisabledStyle sets the style of the button used when it is disabled.
+func (*Button) SetExitFunc ¶
+
+func (b *Button) SetExitFunc(handler func(key tcell.Key)) *Button
+
+SetExitFunc sets a handler which is called when the user leaves the button. The callback function is provided with the key that was pressed, which is one of the following:
+
+    KeyEscape: Leaving the button with no specific direction.
+    KeyTab: Move to the next field.
+    KeyBacktab: Move to the previous field.
+
+func (*Button) SetLabel ¶
+
+func (b *Button) SetLabel(label string) *Button
+
+SetLabel sets the button text.
+func (*Button) SetLabelColor ¶
+
+func (b *Button) SetLabelColor(color tcell.Color) *Button
+
+SetLabelColor sets the color of the button text.
+func (*Button) SetLabelColorActivated ¶
+
+func (b *Button) SetLabelColorActivated(color tcell.Color) *Button
+
+SetLabelColorActivated sets the color of the button text when the button is in focus.
+func (*Button) SetSelectedFunc ¶
+
+func (b *Button) SetSelectedFunc(handler func()) *Button
+
+SetSelectedFunc sets a handler which is called when the button was selected.
+func (*Button) SetStyle ¶
+
+func (b *Button) SetStyle(style tcell.Style) *Button
+
+SetStyle sets the style of the button used when it is not focused.
+type Checkbox ¶
+
+type Checkbox struct {
+	*Box
+	// contains filtered or unexported fields
+}
+
+Checkbox implements a simple box for boolean values which can be checked and unchecked.
+
+See https://github.com/rivo/tview/wiki/Checkbox for an example.
+func NewCheckbox ¶
+
+func NewCheckbox() *Checkbox
+
+NewCheckbox returns a new input field.
+func (*Checkbox) Draw ¶
+
+func (c *Checkbox) Draw(screen tcell.Screen)
+
+Draw draws this primitive onto the screen.
+func (*Checkbox) Focus ¶
+
+func (c *Checkbox) Focus(delegate func(p Primitive))
+
+Focus is called when this primitive receives focus.
+func (*Checkbox) GetFieldHeight ¶
+
+func (c *Checkbox) GetFieldHeight() int
+
+GetFieldHeight returns this primitive's field height.
+func (*Checkbox) GetFieldWidth ¶
+
+func (c *Checkbox) GetFieldWidth() int
+
+GetFieldWidth returns this primitive's field width.
+func (*Checkbox) GetLabel ¶
+
+func (c *Checkbox) GetLabel() string
+
+GetLabel returns the text to be displayed before the input area.
+func (*Checkbox) InputHandler ¶
+
+func (c *Checkbox) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+
+InputHandler returns the handler for this primitive.
+func (*Checkbox) IsChecked ¶
+
+func (c *Checkbox) IsChecked() bool
+
+IsChecked returns whether or not the box is checked.
+func (*Checkbox) MouseHandler ¶
+
+func (c *Checkbox) MouseHandler() func(action MouseAction, event *tcell.EventMouse, setFocus func(p Primitive)) (consumed bool, capture Primitive)
