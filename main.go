@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-  "github.com/gdamore/tcell/v2"
 )
 
 var (
@@ -11,7 +10,6 @@ var (
   session Session
   sf *StatefulFormatter
   history string
-  ui *uiElements
 )
 
 func init() {
@@ -31,12 +29,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-  ui = newUI()
-
-  if err := ui.app.Run(); err != nil {
-    log.Fatal("Couldn't load UI")
-  }
-  
 	if config.APIKey == "" {
 		log.Fatal("You need to add your API key in ~/.config/frnly/settings.conf")
 	}
@@ -53,23 +45,5 @@ func init() {
 }
 
 func main() {
-   // Initialize TUI
-    ui := newUI()  // Assuming newUI() sets up the TUI as discussed earlier
-
-    // Set up TUI input handling
-    ui.inputField.SetDoneFunc(func(key tcell.Key) {
-        if key == tcell.KeyEnter {
-            input := ui.inputField.GetText()
-            if input == "!fin" {
-                ui.inputField.SetText("")
-            } else {
-                readInput(input, ui)
-            }
-        }
-    })
-
-    // Run the TUI application
-    if err := ui.app.Run(); err != nil {
-        log.Fatalf("Failed to run application: %v", err)
-    }
+  setupUI()
 }

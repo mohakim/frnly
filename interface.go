@@ -2,11 +2,14 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
-	"time"
+
+	"github.com/gdamore/tcell/v2"
+	//"time"
 )
 
 
@@ -29,7 +32,7 @@ func readInput() {
 			break
 		}
 
-	  ui.updateChatArea(line)
+		sb.WriteString(line + "\n")
 	}	
 }
 
@@ -51,7 +54,7 @@ func handleCommand(userInput *string) {
     *userInput = strings.ReplaceAll(*userInput, config.SubmitCmd, "")
     var wg sync.WaitGroup
     wg.Add(1)
-		processInput(userInput, &wg)
+		//processInput(userInput, &wg)
 		wg.Wait()
 	case strings.Contains(*userInput, config.ClearCmd):
 		fmt.Print("\033[H\033[2J")
@@ -68,7 +71,7 @@ func handleCommand(userInput *string) {
 	*userInput = ""
 }
 
-func processInput(userInput *string, wg *sync.WaitGroup) {
+func processInput(userInput string, ctx context.Context) {
   var (
     apiOutput       = make(chan string, 10000)
     historyChannel  = make(chan ChatMessage, 2)
@@ -78,16 +81,16 @@ func processInput(userInput *string, wg *sync.WaitGroup) {
 
 	session.Dynamic = append(session.Dynamic, ChatMessage{
 		Role:    "user",
-		Content: *userInput,
+		Content: userInput,
 	})
 
 	historyChannel <- ChatMessage{
 		Role:    "\033[0muser",
-		Content: fmt.Sprintf("%s%s", userColor, *userInput),
+		Content: fmt.Sprintf("%s%s", userColor, userInput),
 	}
 
 	go streamCompletion(config, session, apiOutput)
-	go typeResponse(apiOutput, wg, historyChannel)
+	go typeResponse(apiOutput, ctx)
 
   if config.Session {
     updateSession()
@@ -97,56 +100,22 @@ func processInput(userInput *string, wg *sync.WaitGroup) {
   }
 }
 
-func typeResponse(apiOutput chan string, wg *sync.WaitGroup, historyChannel chan ChatMessage) {
+func typeResponse(apiOutput chan string, ctx context.Context) {
 	var (
-    response, formattedResponse strings.Builder
-    maxWidth, lineLength int
-	  skipSpace bool
+    response strings.Builder
   )
-
-  maxWidth = getTerminalWidth()
 
 	for token := range apiOutput {
 		response.WriteString(token)
-
-    if getState(sf.stateStack) != "isCode" && getState(sf.stateStack) != "isComment" {
-      wordLength := len(token)
-      lineLength += wordLength
-      if lineLength+wordLength > maxWidth {
-        fmt.Print("\n")
-        skipSpace = true
-        lineLength = wordLength
-      }
-    }
     for _, char := range token {
-      if skipSpace {
-        skipSpace = false
-        continue
-      }
-      if char == '\n' {
-        lineLength = 0
-      }
-      if char == '\t' {
-        char = ' '
-        fmt.Print(string(char))
-      }
-      formattedChar := sf.applyFormatting(char)
-      time.Sleep(24 * time.Millisecond)
-      fmt.Print(formattedChar)
+      writeChatbotMessage(ctx, char, tcell.ColorRed)
     }
   }
-	fmt.Print("\n")
+
+  writeChatbotMessage(ctx, '\n', tcell.Color100)
+
 	session.Dynamic = append(session.Dynamic, ChatMessage{
 		Role:    "assistant",
 		Content: response.String(),
 	})
-
-	historyChannel <- ChatMessage{
-		Role:    "\033[0massistant",
-		Content: formattedResponse.String(),
-	}
-	close(historyChannel)
-	response.Reset()
-	formattedResponse.Reset()
-	wg.Done()
 }
