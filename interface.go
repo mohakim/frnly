@@ -1,121 +1,120 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
-	//"time"
+	"github.com/rivo/tview"
 )
 
+var (
+	chatbotOutput *tview.TextView
+	userInput     *tview.TextArea
+	app           *tview.Application
+)
 
-func readInput() {
-  var sb strings.Builder
-	userColor, _ := hexToANSI(config.UserColor)
-	reader := bufio.NewReader(os.Stdin)
+func setupUI() {
+	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
+	app = tview.NewApplication()
+	userInput = tview.NewTextArea()
+	chatbotOutput = tview.NewTextView()
 
-	fmt.Print(userColor + config.Prompt + " ")
+	userInput.SetBorder(true).SetBorderColor(tcell.ColorGreen)
+	userInput.SetBackgroundColor(tcell.ColorDefault)
+	userInput.SetTextStyle(tcell.StyleDefault)
 
-	for {
-		line, _ := reader.ReadString('\n')
-		line = strings.TrimSpace(line)
+	chatbotOutput.SetBackgroundColor(tcell.ColorDefault)
+	chatbotOutput.SetDynamicColors(true)
+  chatbotOutput.SetBorderPadding(1, 0, 1, 1)
 
-		if isCommand(&line) { 
-			sb.WriteString(line)
-			fmt.Print("\n")
-      fullStr := sb.String()
-      handleCommand(&fullStr)
-			break
-		}
-
-		sb.WriteString(line + "\n")
-	}	
-}
-
-func isCommand(userInput *string) bool {
-  commands := []string{config.ClearCmd, config.ExitCmd, config.HistoryCmd, config.SubmitCmd}
-
-  for _, command := range commands {
-    if strings.Contains(*userInput, command) {
-      return true
+	userInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEnter {
+		  currentText := userInput.GetText()
+      if handleCmd(currentText) {
+        return nil
+      }
     }
-  }
+		return event
+	})
 
-  return false
-}
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(userInput, 0, 1, true).
+		AddItem(chatbotOutput, 0, 5, false)
 
-func handleCommand(userInput *string) {
-	switch {
-  case strings.Contains(*userInput, config.SubmitCmd):    
-    *userInput = strings.ReplaceAll(*userInput, config.SubmitCmd, "")
-    var wg sync.WaitGroup
-    wg.Add(1)
-		//processInput(userInput, &wg)
-		wg.Wait()
-	case strings.Contains(*userInput, config.ClearCmd):
-		fmt.Print("\033[H\033[2J")
-	case strings.Contains(*userInput, config.HistoryCmd):
-		fmt.Print("\033[H\033[2J")
-		if history, err := readHistory(); err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Println(history)
-		}
-	case strings.Contains(*userInput, config.ExitCmd):
-		os.Exit(0)
+	app.SetRoot(flex, true).EnableMouse(true).SetFocus(userInput)
+
+	if err := app.Run(); err != nil {
+		panic(err)
 	}
-	*userInput = ""
 }
 
-func processInput(userInput string, ctx context.Context) {
-  var (
-    apiOutput       = make(chan string, 10000)
-    historyChannel  = make(chan ChatMessage, 2)
-  )
+func handleCmd(input string) bool {
+  if strings.Contains(input, config.SubmitCmd) {
+    ctx, cancel := context.WithCancel(context.Background())
+    processInput(userInput.GetText(), ctx, cancel)
+    userInput.SetText("", true)
+  } else if strings.Contains(input, config.ClearCmd) {
+    chatbotOutput.SetText("")
+    userInput.SetText("", true)
+  } else if strings.Contains(input, config.HistoryCmd) {
+    //chatbotOutput.SetText(history)
+    userInput.SetText("", true)
+  } else if strings.Contains(input, config.ExitCmd) {
+    app.Stop()
+  } else {
+    return false
+  }
+  return true
+}
 
-	userColor, _ := hexToANSI(config.UserColor)
+func writeChatbotMessage(ctx context.Context, char rune, color string) {
+	coloredChar := fmt.Sprintf("[%s]%s[white]", color, string(char))
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		chatbotOutput.Write([]byte(string(coloredChar)))
+		app.Draw()
+		time.Sleep(time.Millisecond * 10)
+	}
+}
+
+func processInput(userInput string, ctx context.Context, cancel context.CancelFunc) {
+  var apiOutput = make(chan string, 10000)
 
 	session.Dynamic = append(session.Dynamic, ChatMessage{
 		Role:    "user",
 		Content: userInput,
 	})
 
-	historyChannel <- ChatMessage{
-		Role:    "\033[0muser",
-		Content: fmt.Sprintf("%s%s", userColor, userInput),
-	}
-
 	go streamCompletion(config, session, apiOutput)
-	go typeResponse(apiOutput, ctx)
-
-  if config.Session {
-    updateSession()
-    for msg := range historyChannel {
-      updateHistory(msg.Role, msg.Content)
-    }
-  }
+	go typeResponse(apiOutput, ctx, cancel)
 }
 
-func typeResponse(apiOutput chan string, ctx context.Context) {
-	var (
-    response strings.Builder
-  )
+func typeResponse(apiOutput chan string, ctx context.Context, cancel context.CancelFunc) {
+  var response strings.Builder
 
 	for token := range apiOutput {
 		response.WriteString(token)
     for _, char := range token {
-      writeChatbotMessage(ctx, char, tcell.ColorRed)
+      sf.Print(char, ctx)
     }
   }
 
-  writeChatbotMessage(ctx, '\n', tcell.Color100)
+  sf.Print('\n', ctx)
+  sf.Print('\n', ctx)
+  cancel()
 
-	session.Dynamic = append(session.Dynamic, ChatMessage{
-		Role:    "assistant",
-		Content: response.String(),
-	})
+  if config.Session {
+    session.Dynamic = append(session.Dynamic, ChatMessage{
+      Role:    "assistant",
+      Content: response.String(),
+    })
+  } else {
+    session.Dynamic = []ChatMessage{}
+  }
+  updateSession()
 }

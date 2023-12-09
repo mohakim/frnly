@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 )
 
@@ -9,7 +8,6 @@ var (
   config Settings
   session Session
   sf *StatefulFormatter
-  history string
 )
 
 func init() {
@@ -25,9 +23,7 @@ func init() {
 
 	sf = NewStatefulFormatter()
 
-	if err = initializeColors(sf, config); err != nil {
-		log.Fatal(err)
-	}
+	initializeColors(sf, config)
 
 	if config.APIKey == "" {
 		log.Fatal("You need to add your API key in ~/.config/frnly/settings.conf")
@@ -35,12 +31,8 @@ func init() {
 
 	if config.Session {
 		if session, err = readSession(); err != nil {
-			fmt.Printf("Error: %v. Will proceed without persistent sessions\n", err)
+			log.Panic(err)
 		}
-
-		if history, err = readHistory(); err != nil {
-      fmt.Printf("Error: %v", err)
-    }
 	}
 }
 
