@@ -30,10 +30,13 @@ func setupUI() {
 	chatbotOutput.SetDynamicColors(true)
   chatbotOutput.SetBorderPadding(1, 0, 1, 1)
 
+
 	userInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
 		  currentText := userInput.GetText()
-      if handleCmd(currentText) {
+
+      ctx, cancel := context.WithCancel(context.Background())
+      if handleCmd(currentText, ctx, cancel) {
         return nil
       }
     }
@@ -44,23 +47,20 @@ func setupUI() {
 		AddItem(userInput, 0, 1, true).
 		AddItem(chatbotOutput, 0, 5, false)
 
-	app.SetRoot(flex, true).EnableMouse(true).SetFocus(userInput)
+	app.SetRoot(flex, true)
 
 	if err := app.Run(); err != nil {
 		panic(err)
 	}
 }
 
-func handleCmd(input string) bool {
+func handleCmd(input string, ctx context.Context, cancel context.CancelFunc) bool {
   if strings.Contains(input, config.SubmitCmd) {
-    ctx, cancel := context.WithCancel(context.Background())
     processInput(userInput.GetText(), ctx, cancel)
     userInput.SetText("", true)
   } else if strings.Contains(input, config.ClearCmd) {
+    cancel()
     chatbotOutput.SetText("")
-    userInput.SetText("", true)
-  } else if strings.Contains(input, config.HistoryCmd) {
-    //chatbotOutput.SetText(history)
     userInput.SetText("", true)
   } else if strings.Contains(input, config.ExitCmd) {
     app.Stop()
@@ -108,7 +108,7 @@ func typeResponse(apiOutput chan string, ctx context.Context, cancel context.Can
   sf.Print('\n', ctx)
   cancel()
 
-  if config.Session {
+  if config.Context > 0 {
     session.Dynamic = append(session.Dynamic, ChatMessage{
       Role:    "assistant",
       Content: response.String(),

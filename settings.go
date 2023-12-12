@@ -19,10 +19,8 @@ type Settings struct {
 	TextBlock     string
 	Comments      string
 	References    string
-	Prompt        string
 	ClearCmd      string
 	SubmitCmd     string
-	HistoryCmd    string
 	ExitCmd       string
 }
 
@@ -78,14 +76,10 @@ func readSettings(filePath string) (Settings, error) {
 			settings.Comments = value
 		case "References":
 			settings.References = value
-		case "Prompt":
-			settings.Prompt = value
 		case "Clear":
 			settings.ClearCmd = value
 		case "Submit":
 			settings.SubmitCmd = value
-		case "History":
-			settings.HistoryCmd = value
 		case "Exit":
 			settings.ExitCmd = value
 		}

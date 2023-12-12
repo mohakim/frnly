@@ -34,7 +34,7 @@ func initializeConfig() error {
 API_KEY=""
 
 # GPT Model and Tuning
-Temperature=0.5
+Temperature=0.3
 Model="gpt-4-0314"
 Context=8192
 
@@ -48,10 +48,8 @@ Comments="#BAC2DE"
 References="#FFAA00"
 
 # Interaction
-Prompt=">>>"
 Clear="!clear"
 Submit="!fin"
-History="!hist"
 Exit="!exit"`
 
 	initialSession := Session{

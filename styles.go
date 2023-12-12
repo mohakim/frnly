@@ -72,9 +72,9 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
 				} else if symbol == "`" && count == 3 {
 					sf.stateStack = updateStateStack(sf.stateStack, "isCode")
           stateChange = true
-				// } else if symbol == "*" && count > 0 && !strings.Contains(state, "isC") {
-				// 	sf.stateStack = updateStateStack(sf.stateStack, "isBold")
-    //       stateChange = true
+				} else if symbol == "*" && count > 0 && !strings.Contains(state, "isC") {
+					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+          stateChange = true
         }
       }
     } else if ch == ' ' {
@@ -90,9 +90,9 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
         if symbol == "`" && count == 1 && !strings.Contains(state, "isC") {
           sf.stateStack = updateStateStack(sf.stateStack, "isReference")
           stateChange = true
-        // } else if symbol == "*" && count > 0 && state == "isBold"{
-        //   sf.stateStack = updateStateStack(sf.stateStack, "isBold")
-        //   stateChange = true
+        } else if symbol == "*" && count > 0 && state == "isBold"{
+          sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+          stateChange = true
         }
       }
     }
@@ -116,9 +116,9 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
         sf.lang.Reset()
         sf.readLang = true
         stateChange = true
-			// case symbol == "*" && count > 0 && !strings.Contains(state, "isC"):
-			// 	sf.stateStack = updateStateStack(sf.stateStack, "isBold")
-   //      stateChange = true
+			case symbol == "*" && count > 0 && !strings.Contains(state, "isC"):
+				sf.stateStack = updateStateStack(sf.stateStack, "isBold")
+        stateChange = true
 			case symbol == "`" && count == 1 && !strings.Contains(state, "isC"):
 				sf.stateStack = updateStateStack(sf.stateStack, "isReference")
         stateChange = true
@@ -159,7 +159,7 @@ func initializeColors(sf *StatefulFormatter, settings Settings) {
   sf.ColorMap = map[string]string{
     "Default":           settings.BotColor,
     "isCode":            settings.CodeBlock,
-    "isBold":            settings.CodeBlock,
+    "isBold":            settings.BoldColor,
     "isCommentSingle":   settings.Comments,
     "isCommentMulti":    settings.Comments,
     "isTextBlock":       settings.TextBlock,

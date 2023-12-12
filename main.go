@@ -29,7 +29,7 @@ func init() {
 		log.Fatal("You need to add your API key in ~/.config/frnly/settings.conf")
 	}
 
-	if config.Session {
+	if config.Context > 0 {
 		if session, err = readSession(); err != nil {
 			log.Panic(err)
 		}
