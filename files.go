@@ -36,12 +36,12 @@ API_KEY=""
 # GPT Model and Tuning
 Temperature=0.5
 Model="gpt-4-0314"
-Session=False
 Context=8192
 
 # Styling
 UserColor="#55DD55"
 BotColor="#A6E3A1"
+BoldColor="#66FF66"
 CodeBlock="#7700AA"
 TextBlock="#94E2D5"
 Comments="#BAC2DE"
