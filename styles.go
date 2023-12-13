@@ -9,7 +9,6 @@ import (
 
 type StatefulFormatter struct {
 	stateStack  []string
-	symbolCount map[string]int
 	mu          sync.Mutex
   charBuffer  strings.Builder
   lang        strings.Builder
@@ -20,7 +19,6 @@ type StatefulFormatter struct {
 func NewStatefulFormatter() *StatefulFormatter {
 	return &StatefulFormatter{
  		stateStack:  make([]string, 0),
-		symbolCount: make(map[string]int),
 	}
 }
 
@@ -29,12 +27,10 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
 	defer sf.mu.Unlock()
 
 	var (
-    result      strings.Builder
     char        = string(ch)
-    state       = getState(sf.stateStack)
+    stateChange bool
     buffer      = sf.charBuffer.String()
     lang        = sf.lang.String()
-    stateChange bool
     delimeter   = func (s string, slice []string) bool {
       for _, item := range slice {
         if item == s && s != ""{
@@ -46,113 +42,113 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
   )
 
 	switch {
-  case regexp.MustCompile(`[\p{P}\p{S}]`).MatchString(char) && char != ".":
-    if char == "*" || char == "`"{
-      sf.symbolCount[char]++
-    }
+  case regexp.MustCompile(`[\p{P}\p{S}]`).MatchString(char) && char != "." && char != ",":
     sf.charBuffer.WriteString(char)
 	case ch == '\n', ch == ' ':
+    
 		if ch == '\n' {
-      if state == "isCode" && sf.readLang {
+      if sf.getState() == "isCode" && sf.readLang {
         sf.readLang = false
-      } else if state == "isCommentSingle" {
-        sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
+      } else if sf.getState() == "isCommentSingle" {
+        sf.stateStack = sf.updateStateStack("isCommentSingle")
         stateChange = true
       } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
-        if state == "isCommentMulti" {
-          writeChatbotMessage(ctx, ch, sf.ColorMap[getState(sf.stateStack)])
-          sf.charBuffer.Reset()
+        if sf.getState() == "isCommentMulti" {
+          sf.flushBuffer(ctx, nil)
         }
-        sf.stateStack = updateStateStack(sf.stateStack, "isCommentMulti")
+        sf.stateStack = sf.updateStateStack("isCommentMulti")
       }
-      for symbol, count := range sf.symbolCount {
-        if symbol == "`" && (count == 1 || count == 2) && !strings.Contains(state, "isC") {
-					sf.stateStack = updateStateStack(sf.stateStack, "isTextBlock")
-          stateChange = true
-				} else if symbol == "`" && count == 3 {
-					sf.stateStack = updateStateStack(sf.stateStack, "isCode")
-          stateChange = true
-				} else if symbol == "*" && count > 0 && !strings.Contains(state, "isC") {
-					sf.stateStack = updateStateStack(sf.stateStack, "isBold")
-          stateChange = true
-        }
+
+      if (buffer == "`" || buffer == "``") && !strings.Contains(sf.getState(), "isC") {
+        sf.stateStack = sf.updateStateStack("isTextBlock")
+        stateChange = true
+      } else if buffer == "```" {
+        sf.charBuffer.Reset()
+        sf.stateStack = sf.updateStateStack("isCode")
+        stateChange = true
+      } else if strings.Contains(buffer, "*") &&  (sf.getState() == "Default" || sf.getState() == "isBold")  {
+        sf.stateStack = sf.updateStateStack("isBold")
+        stateChange = true
       }
     } else {
       if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][:2]) {
-        sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
+        sf.stateStack = sf.updateStateStack("isCommentSingle")
       } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
-        if state == "isCommentMulti" {
-          writeChatbotMessage(ctx, ch, sf.ColorMap[getState(sf.stateStack)])
+        if sf.getState() == "isCommentMulti" {
+          writeChatbotMessage(ctx, ch, sf.ColorMap[sf.getState()])
         }
-        sf.stateStack = updateStateStack(sf.stateStack, "isCommentMulti")
+        sf.stateStack = sf.updateStateStack("isCommentMulti")
       }
-      for symbol, count := range sf.symbolCount {
-        if symbol == "`" && count == 1 && !strings.Contains(state, "isC") {
-          sf.stateStack = updateStateStack(sf.stateStack, "isReference")
-          stateChange = true
-        } else if symbol == "*" && count > 0 && state == "isBold"{
-          sf.stateStack = updateStateStack(sf.stateStack, "isBold")
-          stateChange = true
-        }
+
+      if strings.Contains(buffer, "`") && (sf.getState() == "Default" || sf.getState() == "isReference") {
+        sf.flushBuffer(ctx, []rune{'`'})
+        sf.stateStack = sf.updateStateStack("isReference")
+        stateChange = true
+      } else if strings.Contains(buffer, "*") && sf.getState() == "isBold"{
+        sf.flushBuffer(ctx, []rune{'*'})
+        sf.stateStack = sf.updateStateStack("isBold")
+        stateChange = true
       }
     }
-    for k := range sf.symbolCount {
-      delete(sf.symbolCount, k)
-    }
-       
+
     if !stateChange {
-      for _, char := range sf.charBuffer.String() {
-        writeChatbotMessage(ctx, char, sf.ColorMap[getState(sf.stateStack)])
-      }
+      sf.flushBuffer(ctx, nil)
     }
-	  sf.charBuffer.Reset()
-    writeChatbotMessage(ctx, ch, sf.ColorMap[getState(sf.stateStack)])
-		result.WriteString(char)
-	default:
-		for symbol, count := range sf.symbolCount {
-			switch {
-			case symbol == "`" && count == 3:
-				sf.stateStack = updateStateStack(sf.stateStack, "isCode")
-        sf.lang.Reset()
-        sf.readLang = true
-        stateChange = true
-			case symbol == "*" && count > 0 && !strings.Contains(state, "isC"):
-				sf.stateStack = updateStateStack(sf.stateStack, "isBold")
-        stateChange = true
-			case symbol == "`" && count == 1 && !strings.Contains(state, "isC"):
-				sf.stateStack = updateStateStack(sf.stateStack, "isReference")
-        stateChange = true
-			}
-			sf.symbolCount[symbol] = 0
-		}
-    if !stateChange {
-      for _, char := range sf.charBuffer.String() {
-        writeChatbotMessage(ctx, char, sf.ColorMap[getState(sf.stateStack)])
-      }
-      sf.charBuffer.Reset()
+
+    writeChatbotMessage(ctx, ch, sf.ColorMap[sf.getState()])
+	default: 
+    switch {
+    case buffer == "```":
+      sf.stateStack = sf.updateStateStack("isCode")
+      sf.lang.Reset()
+      sf.readLang = true
+      stateChange = true
+    case (buffer == "*" || buffer == "**") &&  (sf.getState() == "Default" || sf.getState() == "isBold") :
+      sf.stateStack = sf.updateStateStack("isBold")
+      stateChange = true
+    case strings.Contains(buffer, "`") &&  (sf.getState() == "Default" || sf.getState() == "isReference") :
+      sf.stateStack = sf.updateStateStack("isReference")
+      stateChange = true
     }
+    
+    sf.flushBuffer(ctx, []rune{'`', '*'})
+
     if sf.readLang {
       sf.lang.WriteRune(ch)
     } else {
-      writeChatbotMessage(ctx, ch, sf.ColorMap[getState(sf.stateStack)])
+      writeChatbotMessage(ctx, ch, sf.ColorMap[sf.getState()])
     }
-    sf.charBuffer.Reset()
 	}
 
 }
 
-func getState(stateStack []string) string {
-	if len(stateStack) == 0 {
+func (sf *StatefulFormatter) flushBuffer(ctx context.Context, exclude []rune) {
+
+  excludeMap := make(map[rune]bool)
+  for _, r := range exclude {
+    excludeMap[r] = true
+  }
+
+  for _, char := range sf.charBuffer.String() {
+    if !excludeMap[char] {
+      writeChatbotMessage(ctx, char, sf.ColorMap[sf.getState()])
+    }
+  }
+  sf.charBuffer.Reset()
+}
+
+func (sf *StatefulFormatter) getState() string {
+	if len(sf.stateStack) == 0 {
 		return "Default"
 	}
-	return stateStack[len(stateStack)-1]
+	return sf.stateStack[len(sf.stateStack)-1]
 }
 
-func updateStateStack(stack []string, state string) []string {
-	if len(stack) > 0 && stack[len(stack)-1] == state {
-		return stack[:len(stack)-1]
+func (sf *StatefulFormatter) updateStateStack(state string) []string {
+	if len(sf.stateStack) > 0 && sf.stateStack[len(sf.stateStack)-1] == state {
+		return sf.stateStack[:len(sf.stateStack)-1]
 	}
-	return append(stack, state)
+	return append(sf.stateStack, state)
 }
 
 func initializeColors(sf *StatefulFormatter, settings Settings) {
