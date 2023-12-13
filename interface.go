@@ -29,7 +29,7 @@ func setupUI() {
 	chatbotOutput.SetBackgroundColor(tcell.ColorDefault)
 	chatbotOutput.SetDynamicColors(true)
   chatbotOutput.SetBorderPadding(1, 0, 1, 1)
-
+  chatbotOutput.SetRegions(true)
 
 	userInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
@@ -47,7 +47,7 @@ func setupUI() {
 		AddItem(userInput, 0, 1, true).
 		AddItem(chatbotOutput, 0, 5, false)
 
-	app.SetRoot(flex, true)
+	app.SetRoot(flex, true).EnableMouse(true)
 
 	if err := app.Run(); err != nil {
 		panic(err)

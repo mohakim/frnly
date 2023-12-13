@@ -58,7 +58,7 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
       } else if state == "isCommentSingle" {
         sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
         stateChange = true
-      } else if delimeter(buffer, commentMap[lang][2:]) {
+      } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
         if state == "isCommentMulti" {
           writeChatbotMessage(ctx, ch, sf.ColorMap[getState(sf.stateStack)])
           sf.charBuffer.Reset()
@@ -77,10 +77,10 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
           stateChange = true
         }
       }
-    } else if ch == ' ' {
-      if delimeter(buffer, commentMap[lang][:2]) {
+    } else {
+      if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][:2]) {
         sf.stateStack = updateStateStack(sf.stateStack, "isCommentSingle")
-      } else if delimeter(buffer, commentMap[lang][2:]) {
+      } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
         if state == "isCommentMulti" {
           writeChatbotMessage(ctx, ch, sf.ColorMap[getState(sf.stateStack)])
         }
