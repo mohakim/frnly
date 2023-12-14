@@ -50,6 +50,8 @@ References="#FFAA00"
 # Interaction
 Clear="!clear"
 Submit="!fin"
+Reset="!reset"
+Permanent="!perm"
 Exit="!exit"`
 
 	initialSession := Session{

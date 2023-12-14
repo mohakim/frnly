@@ -80,13 +80,19 @@ func streamCompletion(config Settings, session Session, apiOutput chan<- string)
 		if len(line) > 6 {
 			var chunk ChatCompletionChunk
 			if string(line) == "data: [DONE]\n" {
-        apiOutput <- "\n"
+        //apiOutput <- "\n"
 				close(apiOutput)
 				break
 			} else if err := json.Unmarshal(line[6:], &chunk); err == nil {
-				buffer.WriteString(chunk.Choices[0].Delta["content"])
-				apiOutput <- buffer.String()
-				buffer.Reset()
+        select {
+        case <-typingCtx.Done():
+          close(apiOutput)
+          return
+        default:
+          buffer.WriteString(chunk.Choices[0].Delta["content"])
+          apiOutput <- buffer.String()
+          buffer.Reset()
+        }
 			}
 		}
 	}

@@ -14,9 +14,13 @@ var (
 	chatbotOutput *tview.TextView
 	userInput     *tview.TextArea
 	app           *tview.Application
+  typingCtx     context.Context
+  cancelTyping  context.CancelFunc
 )
 
 func setupUI() {
+
+  typingCtx, cancelTyping = context.WithCancel(context.Background())
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
 	app = tview.NewApplication()
 	userInput = tview.NewTextArea()
@@ -26,22 +30,34 @@ func setupUI() {
 	userInput.SetBackgroundColor(tcell.ColorDefault)
 	userInput.SetTextStyle(tcell.StyleDefault)
 
-	chatbotOutput.SetBackgroundColor(tcell.ColorDefault)
+	
+	chatbotOutput.SetBorder(true).SetBorderColor(tcell.ColorGreen)
+  chatbotOutput.SetBackgroundColor(tcell.ColorDefault)
 	chatbotOutput.SetDynamicColors(true)
-  chatbotOutput.SetBorderPadding(1, 0, 1, 1)
-  chatbotOutput.SetRegions(true)
+  chatbotOutput.SetDisabled(true)
 
 	userInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
 		  currentText := userInput.GetText()
-
-      ctx, cancel := context.WithCancel(context.Background())
-      if handleCmd(currentText, ctx, cancel) {
+      sf.Reset()
+      if handleCmd(currentText) {
         return nil
       }
     }
 		return event
 	})
+
+  app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+    if event.Key() == tcell.KeyBacktab {
+      if userInput.HasFocus() {
+        app.SetFocus(chatbotOutput)
+      } else {
+        app.SetFocus(userInput)
+      }
+      return nil
+    }
+    return event
+  })  
 
 	flex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(userInput, 0, 1, true).
@@ -54,13 +70,23 @@ func setupUI() {
 	}
 }
 
-func handleCmd(input string, ctx context.Context, cancel context.CancelFunc) bool {
+func handleCmd(input string) bool {
   if strings.Contains(input, config.SubmitCmd) {
-    processInput(userInput.GetText(), ctx, cancel)
+    input = strings.Replace(input, "!fin", "", -1)
+    processInput(input)
     userInput.SetText("", true)
   } else if strings.Contains(input, config.ClearCmd) {
-    cancel()
+    cancelTyping()
+    time.Sleep(time.Second * 1)
+    typingCtx, cancelTyping = context.WithCancel(context.Background())
     chatbotOutput.SetText("")
+    userInput.SetText("", true)
+  } else if strings.Contains(input, config.PermCmd) {
+    input = strings.Replace(input, "!perm", "", -1)
+    session.Permanent = input
+    userInput.SetText("", true)
+  } else if strings.Contains(input, config.ResetCmd) {
+    session.Dynamic = []ChatMessage{}
     userInput.SetText("", true)
   } else if strings.Contains(input, config.ExitCmd) {
     app.Stop()
@@ -70,19 +96,14 @@ func handleCmd(input string, ctx context.Context, cancel context.CancelFunc) boo
   return true
 }
 
-func writeChatbotMessage(ctx context.Context, char rune, color string) {
+func writeChatbotMessage(char rune, color string) {
 	coloredChar := fmt.Sprintf("[%s]%s[white]", color, string(char))
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		chatbotOutput.Write([]byte(string(coloredChar)))
-		app.Draw()
-		time.Sleep(time.Millisecond * 10)
-	}
+	chatbotOutput.Write([]byte(string(coloredChar)))
+	app.Draw()
+	time.Sleep(time.Millisecond * 10)
 }
 
-func processInput(userInput string, ctx context.Context, cancel context.CancelFunc) {
+func processInput(userInput string) {
   var apiOutput = make(chan string, 10000)
 
 	session.Dynamic = append(session.Dynamic, ChatMessage{
@@ -91,22 +112,28 @@ func processInput(userInput string, ctx context.Context, cancel context.CancelFu
 	})
 
 	go streamCompletion(config, session, apiOutput)
-	go typeResponse(apiOutput, ctx, cancel)
+	go typeResponse(apiOutput)
 }
 
-func typeResponse(apiOutput chan string, ctx context.Context, cancel context.CancelFunc) {
+func typeResponse(apiOutput chan string) {
   var response strings.Builder
 
-	for token := range apiOutput {
-		response.WriteString(token)
-    for _, char := range token {
-      sf.Print(char, ctx)
+  for token := range apiOutput {
+    select {
+      case <-typingCtx.Done():
+        return
+      default:
+        response.WriteString(token)
+        for _, char := range token {
+          sf.Print(char)
+      }
     }
   }
-
-  sf.Print('\n', ctx)
-  sf.Print('\n', ctx)
-  cancel()
+  
+  sf.Print('\n')
+  sf.Print('\n')
+  sf.Print('\n')
+  sf.Print('\n')
 
   if config.Context > 0 {
     session.Dynamic = append(session.Dynamic, ChatMessage{

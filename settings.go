@@ -21,6 +21,8 @@ type Settings struct {
 	References    string
 	ClearCmd      string
 	SubmitCmd     string
+  ResetCmd      string
+  PermCmd       string
 	ExitCmd       string
 }
 
@@ -80,6 +82,10 @@ func readSettings(filePath string) (Settings, error) {
 			settings.ClearCmd = value
 		case "Submit":
 			settings.SubmitCmd = value
+    case "Reset":
+      settings.ResetCmd = value
+    case "Permanent":
+			settings.PermCmd = value
 		case "Exit":
 			settings.ExitCmd = value
 		}

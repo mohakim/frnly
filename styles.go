@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"regexp"
 	"strings"
 	"sync"
@@ -22,7 +21,13 @@ func NewStatefulFormatter() *StatefulFormatter {
 	}
 }
 
-func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
+func (sf *StatefulFormatter) Reset() {
+  sf.stateStack = []string{}
+  sf.charBuffer.Reset()
+  sf.lang.Reset()
+}
+
+func (sf *StatefulFormatter) Print(ch rune) {
 	sf.mu.Lock()
 	defer sf.mu.Unlock()
 
@@ -54,7 +59,7 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
         stateChange = true
       } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
         if sf.getState() == "isCommentMulti" {
-          sf.flushBuffer(ctx, nil)
+          sf.flushBuffer(nil)
         }
         sf.stateStack = sf.updateStateStack("isCommentMulti")
       }
@@ -75,27 +80,27 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
         sf.stateStack = sf.updateStateStack("isCommentSingle")
       } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
         if sf.getState() == "isCommentMulti" {
-          writeChatbotMessage(ctx, ch, sf.ColorMap[sf.getState()])
+          writeChatbotMessage(ch, sf.ColorMap[sf.getState()])
         }
         sf.stateStack = sf.updateStateStack("isCommentMulti")
       }
 
       if strings.Contains(buffer, "`") && (sf.getState() == "Default" || sf.getState() == "isReference") {
-        sf.flushBuffer(ctx, []rune{'`'})
+        sf.flushBuffer([]rune{'`'})
         sf.stateStack = sf.updateStateStack("isReference")
         stateChange = true
       } else if strings.Contains(buffer, "*") && sf.getState() == "isBold"{
-        sf.flushBuffer(ctx, []rune{'*'})
+        sf.flushBuffer([]rune{'*'})
         sf.stateStack = sf.updateStateStack("isBold")
         stateChange = true
       }
     }
 
     if !stateChange {
-      sf.flushBuffer(ctx, nil)
+      sf.flushBuffer(nil)
     }
 
-    writeChatbotMessage(ctx, ch, sf.ColorMap[sf.getState()])
+    writeChatbotMessage(ch, sf.ColorMap[sf.getState()])
 	default: 
     switch {
     case buffer == "```":
@@ -111,18 +116,18 @@ func (sf *StatefulFormatter) Print(ch rune, ctx context.Context) {
       stateChange = true
     }
     
-    sf.flushBuffer(ctx, []rune{'`', '*'})
+    sf.flushBuffer([]rune{'`', '*'})
 
     if sf.readLang {
       sf.lang.WriteRune(ch)
     } else {
-      writeChatbotMessage(ctx, ch, sf.ColorMap[sf.getState()])
+      writeChatbotMessage(ch, sf.ColorMap[sf.getState()])
     }
 	}
 
 }
 
-func (sf *StatefulFormatter) flushBuffer(ctx context.Context, exclude []rune) {
+func (sf *StatefulFormatter) flushBuffer(exclude []rune) {
 
   excludeMap := make(map[rune]bool)
   for _, r := range exclude {
@@ -131,7 +136,7 @@ func (sf *StatefulFormatter) flushBuffer(ctx context.Context, exclude []rune) {
 
   for _, char := range sf.charBuffer.String() {
     if !excludeMap[char] {
-      writeChatbotMessage(ctx, char, sf.ColorMap[sf.getState()])
+      writeChatbotMessage(char, sf.ColorMap[sf.getState()])
     }
   }
   sf.charBuffer.Reset()
