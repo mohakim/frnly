@@ -71,8 +71,8 @@ func (sf *StatefulFormatter) Print(ch rune) {
         sf.charBuffer.Reset()
         sf.stateStack = sf.updateStateStack("isCode")
         stateChange = true
-      } else if strings.Contains(buffer, "*") && (sf.getState() == "Default" || sf.getState() == "isBold")  {
-        sf.flushBuffer([]rune{'*'})
+      } else if strings.Contains(buffer, "*") &&  (sf.getState() == "Default" || sf.getState() == "isBold")  {
+        sf.charBuffer.Reset()
         sf.stateStack = sf.updateStateStack("isBold")
         stateChange = true
       }
