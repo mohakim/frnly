@@ -86,16 +86,14 @@ func (sf *StatefulFormatter) Print(ch rune) {
         sf.stateStack = sf.updateStateStack("isCommentMulti")
       }
 
-      if strings.Contains(buffer, "`") && sf.getState() == "Default" {
+      if strings.Contains(buffer, "`") && (sf.getState() == "Default" || sf.getState() == "isReference") {
         sf.flushBuffer([]rune{'`'})
         sf.stateStack = sf.updateStateStack("isReference")
-      } else if strings.Contains(buffer, "`") && sf.getState() == "isReference" {
-        sf.stateStack = sf.updateStateStack("isReference")
-        sf.flushBuffer([]rune{'`'})
-
+        //stateChange = true
       } else if strings.Contains(buffer, "*") && sf.getState() == "isBold"{
         sf.flushBuffer([]rune{'*'})
         sf.stateStack = sf.updateStateStack("isBold")
+        //stateChange = true
       }
     }
     sf.flushBuffer(nil)
@@ -111,13 +109,10 @@ func (sf *StatefulFormatter) Print(ch rune) {
     case (buffer == "*" || buffer == "**") &&  (sf.getState() == "Default" || sf.getState() == "isBold") :
       sf.stateStack = sf.updateStateStack("isBold")
       //stateChange = true
-    case strings.Contains(buffer, "`") &&  sf.getState() == "Default":
+    case strings.Contains(buffer, "`") &&  (sf.getState() == "Default" || sf.getState() == "isReference") :
       sf.flushBuffer([]rune{'`'})
       sf.stateStack = sf.updateStateStack("isReference")
       //stateChange = true
-    case strings.Contains(buffer, "`") && sf.getState() == "isReference":
-      sf.stateStack = sf.updateStateStack("isReference")
-      sf.flushBuffer([]rune{'`'})
     }
     
     sf.flushBuffer([]rune{'`', '*'})
