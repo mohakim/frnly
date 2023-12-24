@@ -33,7 +33,6 @@ func (sf *StatefulFormatter) Print(ch rune) {
 
 	var (
     char        = string(ch)
-    //stateChange bool
     buffer      = sf.charBuffer.String()
     lang        = sf.lang.String()
     delimeter   = func (s string, slice []string) bool {
@@ -55,8 +54,8 @@ func (sf *StatefulFormatter) Print(ch rune) {
       if sf.getState() == "isCode" && sf.readLang {
         sf.readLang = false
       } else if sf.getState() == "isCommentSingle" {
+        sf.flushBuffer(nil)
         sf.stateStack = sf.updateStateStack("isCommentSingle")
-        //stateChange = true
       } else if len(commentMap[lang]) > 2 && delimeter(buffer, commentMap[lang][2:]) {
         if sf.getState() == "isCommentMulti" {
           sf.flushBuffer(nil)
@@ -65,7 +64,8 @@ func (sf *StatefulFormatter) Print(ch rune) {
       }
 
       if (buffer == "`" || buffer == "``") && !strings.Contains(sf.getState(), "isC") {
-        sf.stateStack = sf.updateStateStack("isTextBlock")
+        sf.flushBuffer([]rune{'`'})
+        sf.stateStack = sf.updateStateStack("isReference")
         //stateChange = true
       } else if buffer == "```" {
         sf.charBuffer.Reset()
